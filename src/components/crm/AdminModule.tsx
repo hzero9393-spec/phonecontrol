@@ -149,7 +149,16 @@ export default function AdminModule() {
 
       const data = await res.json();
       if (res.ok) {
-        toast({ title: editingId ? 'Admin Updated' : 'Admin Created', description: 'Operation successful' });
+        if (!editingId) {
+          // New admin created — show credentials clearly
+          toast({
+            title: '✅ Admin Created Successfully!',
+            description: `Username: ${form.username}  |  Password: ${form.password}. You can now login with these credentials.`,
+            duration: 6000,
+          });
+        } else {
+          toast({ title: '✅ Admin Updated', description: `${form.username} has been updated.` });
+        }
         setDialogOpen(false);
         setForm(emptyForm);
         setEditingId(null);

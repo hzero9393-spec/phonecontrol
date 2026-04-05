@@ -2,9 +2,18 @@
 
 import React, { useState } from 'react';
 import { useCRMStore } from '@/store/use-crm-store';
-import { Smartphone, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
+import { Smartphone, Eye, EyeOff, Loader2, AlertCircle, RotateCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ThemeToggle from '@/components/ThemeToggle';
+
+async function tryLogin(username: string, password: string): Promise<Response> {
+  const res = await fetch('/api/crm/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return res;
+}
 
 export default function LoginForm() {
   const { setAdmin, setTheme } = useCRMStore();
@@ -14,10 +23,12 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setRetryCount(0);
 
     if (!username || !password) {
       setError('Please enter both username and password');
@@ -25,38 +36,47 @@ export default function LoginForm() {
     }
 
     setLoading(true);
-    try {
-      const res = await fetch('/api/crm/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
 
-      const data = await res.json();
+    // Auto-retry up to 3 times if server doesn't respond
+    const maxRetries = 3;
+    let lastError = '';
 
-      if (!res.ok) {
-        if (res.status === 401) {
-          setError('Invalid username or password');
-        } else {
-          setError(data.error || `Login failed (Error ${res.status})`);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        setRetryCount(attempt > 1 ? attempt : 0);
+        const res = await tryLogin(username, password);
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            setError('Invalid username or password');
+          } else {
+            setError(data.error || `Login failed (Error ${res.status})`);
+          }
+          setLoading(false);
+          return;
         }
-        return;
-      }
 
-      setAdmin(data);
-      if (data.theme) setTheme(data.theme);
-      toast({ title: 'Welcome back!', description: `Logged in as ${data.fullName}` });
-    } catch (err: unknown) {
-      const message = err instanceof TypeError && err.message === 'Failed to fetch'
-        ? 'Server is not responding. Please wait a moment and try again.'
-        : err instanceof Error
-        ? `Connection error: ${err.message}`
-        : 'Network error. Please check your connection and try again.';
-      setError(message);
-      console.error('Login error:', err);
-    } finally {
-      setLoading(false);
+        // Success!
+        setAdmin(data);
+        if (data.theme) setTheme(data.theme);
+        toast({ title: 'Welcome back!', description: `Logged in as ${data.fullName}` });
+        setLoading(false);
+        return;
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err.message : 'Unknown error';
+        console.error(`Login attempt ${attempt} failed:`, lastError);
+
+        if (attempt < maxRetries) {
+          // Wait before retry (1s, 2s)
+          await new Promise(r => setTimeout(r, attempt * 1000));
+        }
+      }
     }
+
+    // All retries failed
+    setError('Server is not responding. Please refresh the page and try again.');
+    setLoading(false);
   };
 
   return (
@@ -134,8 +154,9 @@ export default function LoginForm() {
             >
               {loading ? (
                 <>
+                  {retryCount > 0 && <RotateCw size={15} className="mr-1 animate-spin" />}
                   <Loader2 size={17} className="animate-spin" />
-                  Signing in...
+                  {retryCount > 0 ? `Retrying (${retryCount}/3)...` : 'Signing in...'}
                 </>
               ) : (
                 'Sign In'
@@ -146,7 +167,7 @@ export default function LoginForm() {
           <div className="mt-6 p-3 bg-primary/5 rounded-lg border border-primary/10">
             <p className="text-xs font-medium text-primary mb-1">Demo Credentials</p>
             <p className="text-xs text-muted-foreground">
-              Username: <span className="font-mono font-bold text-foreground">master</span> &nbsp;|&nbsp; Password: <span className="font-mono font-bold text-foreground">master123</span>
+              Username: <span className="font-mono font-bold text-foreground">goutamji100</span> &nbsp;|&nbsp; Password: <span className="font-mono font-bold text-foreground">goutamji100</span>
             </p>
           </div>
         </div>
