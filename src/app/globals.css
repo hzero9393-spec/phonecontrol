@@ -45,205 +45,393 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ═══════════════════════════════════════════
+   PHONECRM BRAND THEME — LIGHT MODE
+   ═══════════════════════════════════════════ */
 :root {
-  --radius: 0.5rem;
-  /* PhoneCRM Brand Theme */
+  --radius: 0.625rem;
   --primary: #FF5F00;
   --primary-foreground: #FFFFFF;
   --secondary: #B20600;
   --secondary-foreground: #FFFFFF;
-  --background: #EEEEEE;
-  --foreground: #00092C;
+  --background: #F4F5F7;
+  --foreground: #0F172A;
   --card: #FFFFFF;
-  --card-foreground: #00092C;
+  --card-foreground: #0F172A;
   --popover: #FFFFFF;
-  --popover-foreground: #00092C;
-  --muted: #DCDCDC;
-  --muted-foreground: #555555;
-  --accent: #FFFFFF;
-  --accent-foreground: #00092C;
-  --destructive: #B20600;
-  --border: #D1D1D1;
-  --input: #D1D1D1;
+  --popover-foreground: #0F172A;
+  --muted: #E8EAF0;
+  --muted-foreground: #64748B;
+  --accent: #FFF7ED;
+  --accent-foreground: #9A3412;
+  --destructive: #DC2626;
+  --border: #E2E5EB;
+  --input: #E2E5EB;
   --ring: #FF5F00;
-  --success: #0FA968;
-  --warning: #E8960C;
+  --success: #059669;
+  --warning: #D97706;
   --chart-1: #FF5F00;
-  --chart-2: #0FA968;
-  --chart-3: #E8960C;
+  --chart-2: #059669;
+  --chart-3: #D97706;
   --chart-4: #00092C;
   --chart-5: #B20600;
+
+  /* Sidebar */
   --sidebar: #00092C;
-  --sidebar-foreground: #EEEEEE;
+  --sidebar-foreground: #E2E8F0;
   --sidebar-primary: #FF5F00;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #0A1A4A;
-  --sidebar-accent-foreground: #EEEEEE;
-  --sidebar-border: #1A2560;
+  --sidebar-accent-foreground: #E2E8F0;
+  --sidebar-border: #1E2D5A;
   --sidebar-ring: #FF5F00;
+
+  /* Semantic tokens */
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --header-border: #E2E5EB;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+  --table-hover: #F8F9FB;
+  --table-header-bg: #F4F5F7;
+  --input-bg: #FFFFFF;
+  --overlay-bg: rgba(0, 9, 44, 0.5);
+  --skeleton-bg: #E8EAF0;
+  --tooltip-bg: #FFFFFF;
+  --tooltip-border: #E2E5EB;
+  --scrollbar-track: #F1F3F5;
+  --scrollbar-thumb: #C1C5CE;
+  --scrollbar-thumb-hover: #9CA3AF;
+
+  /* Badge colors */
+  --badge-success-bg: #DCFCE7;
+  --badge-success-text: #166534;
+  --badge-warning-bg: #FEF3C7;
+  --badge-warning-text: #92400E;
+  --badge-danger-bg: #FEE2E2;
+  --badge-danger-text: #991B1B;
+  --badge-info-bg: #E0E7FF;
+  --badge-info-text: #3730A3;
+  --badge-default-bg: #F1F5F9;
+  --badge-default-text: #475569;
 }
 
+/* ═══════════════════════════════════════════
+   PHONECRM BRAND THEME — DARK MODE
+   ═══════════════════════════════════════════ */
+.dark {
+  --primary: #FF7A2E;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E8413F;
+  --secondary-foreground: #FFFFFF;
+  --background: #0B0E14;
+  --foreground: #E2E8F0;
+  --card: #141820;
+  --card-foreground: #E2E8F0;
+  --popover: #1A1F2E;
+  --popover-foreground: #E2E8F0;
+  --muted: #1E2333;
+  --muted-foreground: #94A3B8;
+  --accent: #1C1520;
+  --accent-foreground: #FDBA74;
+  --destructive: #EF4444;
+  --border: #252A3A;
+  --input: #252A3A;
+  --ring: #FF7A2E;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --chart-1: #FF7A2E;
+  --chart-2: #34D399;
+  --chart-3: #FBBF24;
+  --chart-4: #818CF8;
+  --chart-5: #F87171;
+
+  /* Sidebar */
+  --sidebar: #070A10;
+  --sidebar-foreground: #CBD5E1;
+  --sidebar-primary: #FF7A2E;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #111728;
+  --sidebar-accent-foreground: #CBD5E1;
+  --sidebar-border: #1A2035;
+  --sidebar-ring: #FF7A2E;
+
+  /* Semantic tokens */
+  --header-bg: rgba(11, 14, 20, 0.85);
+  --header-border: #1E2333;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.4), 0 4px 10px rgba(0, 0, 0, 0.2);
+  --table-hover: #1A1F2E;
+  --table-header-bg: #161B27;
+  --input-bg: #1A1F2E;
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --skeleton-bg: #1E2333;
+  --tooltip-bg: #1A1F2E;
+  --tooltip-border: #2D3348;
+  --scrollbar-track: #111520;
+  --scrollbar-thumb: #2D3348;
+  --scrollbar-thumb-hover: #475569;
+
+  /* Badge colors */
+  --badge-success-bg: #064E3B;
+  --badge-success-text: #6EE7B7;
+  --badge-warning-bg: #78350F;
+  --badge-warning-text: #FCD34D;
+  --badge-danger-bg: #7F1D1D;
+  --badge-danger-text: #FCA5A5;
+  --badge-info-bg: #312E81;
+  --badge-info-text: #A5B4FC;
+  --badge-default-bg: #1E293B;
+  --badge-default-text: #94A3B8;
+}
+
+/* ═══════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════ */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Custom scrollbar */
+/* ═══════════════════════════════════════════
+   CUSTOM SCROLLBAR
+   ═══════════════════════════════════════════ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #E0E0E0;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #AAAAAA;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #888888;
+  background: var(--scrollbar-thumb-hover);
 }
 
-/* CRM Layout */
+/* ═══════════════════════════════════════════
+   CRM LAYOUT SYSTEM
+   ═══════════════════════════════════════════ */
 .crm-layout {
   display: flex;
   min-height: 100vh;
 }
 .crm-sidebar {
-  width: 260px;
+  width: 270px;
   min-height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
   bottom: 0;
-  background: #00092C;
-  color: #EEEEEE;
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
   z-index: 40;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--sidebar-border);
 }
 .crm-sidebar.closed {
   transform: translateX(-100%);
 }
 .crm-main {
   flex: 1;
-  margin-left: 260px;
+  margin-left: 270px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: margin-left 0.3s ease;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .crm-main.expanded {
   margin-left: 0;
 }
 .crm-header {
   height: 64px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #D1D1D1;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
   display: flex;
   align-items: center;
   padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 30;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .crm-content {
   flex: 1;
-  padding: 24px;
+  padding: 28px;
+  background: var(--background);
 }
 .crm-footer {
-  background: #FFFFFF;
-  border-top: 1px solid #D1D1D1;
-  padding: 16px 24px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 14px 24px;
   text-align: center;
-  color: #555555;
-  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
 }
 
-/* Sidebar nav item */
+/* ═══════════════════════════════════════════
+   SIDEBAR NAVIGATION
+   ═══════════════════════════════════════════ */
 .crm-nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 20px;
-  color: #B0B8CC;
+  color: var(--muted-foreground);
   cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 0;
-  font-size: 0.9rem;
-  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  margin: 2px 8px;
+  border-radius: 8px;
+  font-weight: 500;
 }
 .crm-nav-item:hover {
-  background: #0A1A4A;
-  color: #FFFFFF;
+  background: var(--sidebar-accent);
+  color: var(--sidebar-foreground);
 }
 .crm-nav-item.active {
-  background: #0A1A4A;
-  color: #FF5F00;
-  border-left-color: #FF5F00;
+  background: linear-gradient(135deg, rgba(255, 95, 0, 0.15) 0%, rgba(255, 95, 0, 0.05) 100%);
+  color: var(--sidebar-primary);
   font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--sidebar-primary);
 }
 
-/* Stat cards */
-.stat-card {
-  background: #FFFFFF;
+/* ═══════════════════════════════════════════
+   STAT & CARD SYSTEM
+   ═══════════════════════════════════════════ */
+.crm-card {
+  background: var(--card);
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid #D1D1D1;
-  transition: box-shadow 0.2s;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 9, 44, 0.1);
+.crm-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
 }
 
-/* Table */
+/* ═══════════════════════════════════════════
+   TABLE SYSTEM
+   ═══════════════════════════════════════════ */
 .crm-table {
   width: 100%;
   border-collapse: collapse;
 }
 .crm-table thead th {
-  background: #F6F6F6;
+  background: var(--table-header-bg);
   padding: 12px 16px;
   text-align: left;
   font-weight: 600;
-  font-size: 0.8rem;
-  color: #555555;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid #D1D1D1;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .crm-table tbody td {
   padding: 12px 16px;
-  border-bottom: 1px solid #EEEEEE;
+  border-bottom: 1px solid var(--border);
   font-size: 0.875rem;
-  color: #00092C;
+  color: var(--card-foreground);
   vertical-align: middle;
 }
+.crm-table tbody tr {
+  transition: background 0.15s ease;
+}
 .crm-table tbody tr:hover {
-  background: #FAFAFA;
+  background: var(--table-hover);
 }
 
-/* Status badges */
+/* ═══════════════════════════════════════════
+   STATUS BADGES
+   ═══════════════════════════════════════════ */
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.03em;
 }
-.badge-success { background: #D1FAE5; color: #065F46; }
-.badge-warning { background: #FEF3C7; color: #92400E; }
-.badge-danger  { background: #FFE4E1; color: #8B0000; }
-.badge-info    { background: #E8E8F0; color: #00092C; }
-.badge-default { background: #EEEEEE; color: #555555; }
+.badge-success { background: var(--badge-success-bg); color: var(--badge-success-text); }
+.badge-warning { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+.badge-danger  { background: var(--badge-danger-bg);  color: var(--badge-danger-text); }
+.badge-info    { background: var(--badge-info-bg);    color: var(--badge-info-text); }
+.badge-default { background: var(--badge-default-bg); color: var(--badge-default-text); }
 
-/* Mobile responsive */
+/* ═══════════════════════════════════════════
+   FORM INPUT STYLES
+   ═══════════════════════════════════════════ */
+.crm-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+.crm-input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(255, 95, 0, 0.12);
+}
+.crm-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
+.crm-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 6px;
+}
+
+.crm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+.crm-btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(255, 95, 0, 0.3);
+}
+.crm-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE MOBILE
+   ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
   .crm-sidebar {
     transform: translateX(-100%);
@@ -267,19 +455,24 @@
   }
 }
 
-/* Overlay for mobile sidebar */
+/* ═══════════════════════════════════════════
+   MOBILE SIDEBAR OVERLAY
+   ═══════════════════════════════════════════ */
 .crm-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 9, 44, 0.6);
+  background: var(--overlay-bg);
   z-index: 35;
+  backdrop-filter: blur(4px);
 }
 .crm-overlay.visible {
   display: block;
 }
 
-/* Print styles for invoices */
+/* ═══════════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════════ */
 @media print {
   .crm-sidebar, .crm-header, .crm-footer, .no-print {
     display: none !important;

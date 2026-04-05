@@ -61,7 +61,7 @@ interface Order {
 
 const statusColors: Record<string, string> = {
   pending: 'bg-[#FFF8EB] text-amber-800 border-amber-200',
-  processing: 'bg-[#FFF5F0] text-[#CC4D00] border-[#FFD4BF]',
+  processing: 'bg-primary/5 text-primary border-primary/20',
   completed: 'bg-green-100 text-green-800 border-green-200',
   cancelled: 'bg-red-100 text-[#8B0500] border-red-200',
 };
@@ -266,20 +266,20 @@ export default function OrdersModule() {
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-[#00092C]">Orders</h2>
-          <p className="text-sm text-[#555555]">Manage customer orders and track delivery status</p>
+          <h2 className="text-xl font-bold text-foreground">Orders</h2>
+          <p className="text-sm text-muted-foreground">Manage customer orders and track delivery status</p>
         </div>
-        <Button onClick={openNewOrder} className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white">
+        <Button onClick={openNewOrder} className="bg-primary hover:bg-primary/90 text-white">
           <Plus size={16} className="mr-2" />
           New Order
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-[#D1D1D1] p-4">
+      <div className="bg-card rounded-xl border border-border p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by brand, model, customer..."
               className="pl-9"
@@ -303,13 +303,13 @@ export default function OrdersModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={28} className="animate-spin text-[#888888]" />
+            <Loader2 size={28} className="animate-spin text-muted-foreground" />
           </div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#888888]">
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <ShoppingBag size={40} className="mb-3 opacity-50" />
             <p className="font-medium">No orders found</p>
             <p className="text-sm mt-1">Create a new order to get started</p>
@@ -318,20 +318,20 @@ export default function OrdersModule() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-[#FAFAFA]/80">
-                  <TableHead className="font-semibold text-[#00092C]">Customer</TableHead>
-                  <TableHead className="font-semibold text-[#00092C]">Brand</TableHead>
-                  <TableHead className="font-semibold text-[#00092C]">Model</TableHead>
-                  <TableHead className="font-semibold text-[#00092C] text-right">Advance</TableHead>
-                  <TableHead className="font-semibold text-[#00092C]">Status</TableHead>
-                  <TableHead className="font-semibold text-[#00092C]">Order Date</TableHead>
-                  <TableHead className="font-semibold text-[#00092C]">Delivery Date</TableHead>
-                  <TableHead className="font-semibold text-[#00092C] text-right">Actions</TableHead>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold text-foreground">Customer</TableHead>
+                  <TableHead className="font-semibold text-foreground">Brand</TableHead>
+                  <TableHead className="font-semibold text-foreground">Model</TableHead>
+                  <TableHead className="font-semibold text-foreground text-right">Advance</TableHead>
+                  <TableHead className="font-semibold text-foreground">Status</TableHead>
+                  <TableHead className="font-semibold text-foreground">Order Date</TableHead>
+                  <TableHead className="font-semibold text-foreground">Delivery Date</TableHead>
+                  <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id} className="hover:bg-[#F0F0F0]/50">
+                  <TableRow key={order.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{order.customer?.name || '-'}</TableCell>
                     <TableCell>{order.brand}</TableCell>
                     <TableCell>{order.model || '-'}</TableCell>
@@ -354,7 +354,7 @@ export default function OrdersModule() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(order)}
-                          className="h-8 w-8 p-0 text-[#555555] hover:text-[#FF5F00]"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
                         >
                           <Edit size={15} />
                         </Button>
@@ -369,8 +369,8 @@ export default function OrdersModule() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[#EEEEEE]">
-            <p className="text-sm text-[#555555]">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            <p className="text-sm text-muted-foreground">
               Page {page} of {totalPages}
             </p>
             <div className="flex items-center gap-1">
@@ -510,7 +510,7 @@ export default function OrdersModule() {
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               {submitting && <Loader2 size={16} className="mr-2 animate-spin" />}
               {editingId ? 'Update Order' : 'Create Order'}
@@ -553,7 +553,7 @@ export default function OrdersModule() {
             <Button
               onClick={handleStatusUpdate}
               disabled={submitting || !newStatus}
-              className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               {submitting && <Loader2 size={16} className="mr-2 animate-spin" />}
               Update Status

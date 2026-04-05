@@ -127,9 +127,9 @@ const fmt = (n: number) => priceFmt.format(n);
 // ─── Payment badge ──────────────────────────────────────
 function PaymentBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    full: { label: 'Full', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    partial: { label: 'Partial', className: 'bg-[#FFF8EB] text-amber-800 border-amber-200' },
-    pending: { label: 'Pending', className: 'bg-red-100 text-[#8B0500] border-red-200' },
+    full: { label: 'Full', className: 'bg-success/10 text-success border-success/20' },
+    partial: { label: 'Partial', className: 'bg-warning/10 text-warning border-warning/20' },
+    pending: { label: 'Pending', className: 'bg-destructive/10 text-destructive border-destructive/20' },
   };
   const c = config[status] || config.pending;
   return (
@@ -161,9 +161,9 @@ function InvoicePrintView({
       {/* Shop header */}
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold">{shopName}</h1>
-        {shopAddress && <p className="text-sm text-[#00092C] mt-1">{shopAddress}</p>}
-        {shopPhone && <p className="text-sm text-[#00092C]">Phone: {shopPhone}</p>}
-        {shopGst && <p className="text-sm text-[#00092C]">GSTIN: {shopGst}</p>}
+        {shopAddress && <p className="text-sm text-foreground mt-1">{shopAddress}</p>}
+        {shopPhone && <p className="text-sm text-foreground">Phone: {shopPhone}</p>}
+        {shopGst && <p className="text-sm text-foreground">GSTIN: {shopGst}</p>}
       </div>
 
       <Separator className="my-4" />
@@ -172,19 +172,19 @@ function InvoicePrintView({
       <div className="flex justify-between items-start mb-6">
         <div>
           <h2 className="text-lg font-bold">TAX INVOICE</h2>
-          <p className="text-sm text-[#00092C]">{invoice.invoiceNo}</p>
+          <p className="text-sm text-foreground">{invoice.invoiceNo}</p>
         </div>
-        <div className="text-right text-sm text-[#00092C]">
+        <div className="text-right text-sm text-foreground">
           <p>Date: {new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
         </div>
       </div>
 
       {/* Customer details */}
-      <div className="mb-6 p-4 bg-[#F0F0F0] rounded-lg">
-        <h3 className="text-sm font-bold text-[#00092C] mb-2">Bill To:</h3>
+      <div className="mb-6 p-4 bg-muted rounded-lg">
+        <h3 className="text-sm font-bold text-foreground mb-2">Bill To:</h3>
         <p className="font-semibold">{invoice.customer.name}</p>
-        {invoice.customer.phone && <p className="text-sm text-[#00092C]">Phone: {invoice.customer.phone}</p>}
-        {invoice.customer.address && <p className="text-sm text-[#00092C]">Address: {invoice.customer.address}</p>}
+        {invoice.customer.phone && <p className="text-sm text-foreground">Phone: {invoice.customer.phone}</p>}
+        {invoice.customer.address && <p className="text-sm text-foreground">Address: {invoice.customer.address}</p>}
       </div>
 
       {/* Item details */}
@@ -198,11 +198,11 @@ function InvoicePrintView({
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-[#D1D1D1]">
+          <tr className="border-b border-border">
             <td className="py-3">1</td>
             <td>
               <p className="font-medium">{invoice.sale.inventory.brand} {invoice.sale.inventory.model}</p>
-              <p className="text-xs text-[#555555]">
+              <p className="text-xs text-muted-foreground">
                 {invoice.sale.inventory.ram && invoice.sale.inventory.storage
                   ? `${invoice.sale.inventory.ram} / ${invoice.sale.inventory.storage}`
                   : ''}
@@ -210,7 +210,7 @@ function InvoicePrintView({
                 {invoice.sale.inventory.condition ? ` • ${invoice.sale.inventory.condition}` : ''}
               </p>
             </td>
-            <td className="text-[#00092C]">{invoice.sale.inventory.imeiNo || '—'}</td>
+            <td className="text-foreground">{invoice.sale.inventory.imeiNo || '—'}</td>
             <td className="text-right font-semibold">{fmt(baseAmount)}</td>
           </tr>
         </tbody>
@@ -219,19 +219,19 @@ function InvoicePrintView({
       {/* Price breakdown */}
       <div className="border-t-2 border-gray-300 pt-4 space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-[#00092C]">Subtotal</span>
+          <span className="text-foreground">Subtotal</span>
           <span className="font-medium">{fmt(baseAmount)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-[#00092C]">CGST (9%)</span>
+          <span className="text-foreground">CGST (9%)</span>
           <span className="font-medium">{fmt(cgst)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-[#00092C]">SGST (9%)</span>
+          <span className="text-foreground">SGST (9%)</span>
           <span className="font-medium">{fmt(sgst)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-[#00092C]">GST Total (18%)</span>
+          <span className="text-foreground">GST Total (18%)</span>
           <span className="font-medium">{fmt(invoice.gstAmount)}</span>
         </div>
         <Separator />
@@ -242,32 +242,32 @@ function InvoicePrintView({
       </div>
 
       {/* Payment info */}
-      <div className="mt-6 p-4 bg-[#F0F0F0] rounded-lg text-sm">
+      <div className="mt-6 p-4 bg-muted rounded-lg text-sm">
         <div className="flex justify-between mb-1">
-          <span className="text-[#00092C]">Paid Amount:</span>
-          <span className="font-semibold text-[#0A8A54]">{fmt(invoice.paidAmount)}</span>
+          <span className="text-foreground">Paid Amount:</span>
+          <span className="font-semibold text-success">{fmt(invoice.paidAmount)}</span>
         </div>
         <div className="flex justify-between mb-1">
-          <span className="text-[#00092C]">Pending Amount:</span>
-          <span className={`font-semibold ${invoice.pendingAmount > 0 ? 'text-[#B20600]' : 'text-[#0A8A54]'}`}>
+          <span className="text-foreground">Pending Amount:</span>
+          <span className={`font-semibold ${invoice.pendingAmount > 0 ? 'text-destructive' : 'text-success'}`}>
             {fmt(invoice.pendingAmount)}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-[#00092C]">Payment Status:</span>
+          <span className="text-foreground">Payment Status:</span>
           <PaymentBadge status={invoice.sale.paymentStatus} />
         </div>
       </div>
 
       {/* Warranty */}
       {invoice.sale.warrantyMonths > 0 && (
-        <div className="mt-4 text-sm text-[#00092C]">
+        <div className="mt-4 text-sm text-foreground">
           <p className="font-medium">Warranty: {invoice.sale.warrantyMonths} months from date of purchase</p>
         </div>
       )}
 
       {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-[#D1D1D1] text-center text-xs text-[#888888]">
+      <div className="mt-8 pt-6 border-t border-border text-center text-xs text-muted-foreground">
         <p>Thank you for your purchase!</p>
         <p className="mt-1">This is a computer-generated invoice.</p>
       </div>
@@ -424,10 +424,10 @@ export default function InvoicesModule() {
                     <TableCell className="text-right font-semibold">
                       {fmt(inv.totalAmount)}
                     </TableCell>
-                    <TableCell className="text-right text-[#0A8A54] font-medium">
+                    <TableCell className="text-right text-success font-medium">
                       {fmt(inv.paidAmount)}
                     </TableCell>
-                    <TableCell className={`text-right font-medium ${inv.pendingAmount > 0 ? 'text-[#B20600]' : 'text-[#0A8A54]'}`}>
+                    <TableCell className={`text-right font-medium ${inv.pendingAmount > 0 ? 'text-destructive' : 'text-success'}`}>
                       {fmt(inv.pendingAmount)}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">

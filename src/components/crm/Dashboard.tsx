@@ -93,50 +93,35 @@ const formatCompact = (amount: number) => {
 };
 
 /* ──────────────────────────── Color Palette ──────────────────────────── */
-const COLORS = {
-  orange: '#FF5F00',
-  darkOrange: '#CC4D00',
-  navy: '#00092C',
-  darkRed: '#B20600',
-  green: '#0FA968',
-  darkGreen: '#0A8A54',
-  amber: '#E8960C',
-  darkAmber: '#C47D08',
-  lightGray: '#EEEEEE',
-  border: '#D1D1D1',
-  muted: '#555555',
-  lightMuted: '#888888',
-};
-
-const PIE_COLORS = [COLORS.orange, COLORS.navy, COLORS.green, COLORS.darkRed, COLORS.amber, COLORS.darkOrange];
-const PIE_COLORS_ALT = [COLORS.green, COLORS.orange, COLORS.darkRed];
+const PIE_COLORS = ['#FF5F00', '#059669', '#D97706', '#6366F1', '#EC4899', '#14B8A6'];
+const PIE_COLORS_ALT = ['#059669', '#FF5F00', '#DC2626'];
 
 /* ──────────────────────────── Animation Variants ──────────────────────────── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+    transition: { delay: i * 0.05, duration: 0.4, ease: 'easeOut' },
   }),
 };
 
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+  hidden: { opacity: 0, scale: 0.97 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.45, ease: 'easeOut' } },
 };
 
 /* ──────────────────────────── Custom Tooltip ──────────────────────────── */
 function ChartTooltip({ active, payload, label, isCurrency }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string; isCurrency?: boolean }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white rounded-lg shadow-xl border border-[#D1D1D1] px-4 py-3 text-sm">
-      <p className="font-semibold text-[#00092C] mb-1">{label}</p>
+    <div className="bg-card rounded-lg shadow-xl border border-border px-4 py-3 text-sm">
+      <p className="font-semibold text-foreground mb-1.5">{label}</p>
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-          <span className="text-[#555555]">{p.name}: </span>
-          <span className="font-semibold text-[#00092C]">{isCurrency ? formatINR(p.value) : p.value}</span>
+          <span className="text-muted-foreground">{p.name}: </span>
+          <span className="font-semibold text-foreground">{isCurrency ? formatINR(p.value) : p.value}</span>
         </div>
       ))}
     </div>
@@ -151,7 +136,7 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx:
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   return (
-    <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs fill-[#555555] font-medium">
+    <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs fill-muted-foreground font-medium">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -160,8 +145,8 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx:
 /* ──────────────────────────── Empty Chart State ──────────────────────────── */
 function EmptyChart({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-[#888888]">
-      <Activity size={32} className="mb-2 opacity-30" />
+    <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-muted-foreground/50">
+      <Activity size={32} className="mb-2 opacity-40" />
       <p className="text-sm">{message}</p>
     </div>
   );
@@ -209,8 +194,6 @@ export default function Dashboard() {
         .map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }))
     : [];
 
-  const hasData = conditionPieData.length > 0 || paymentPieData.length > 0 || stats?.monthlyRevenue.some(m => m.revenue > 0) || false;
-
   /* ─── Badges ─── */
   const statusBadge = (s: string) => {
     const m: Record<string, string> = { pending: 'badge-warning', complete: 'badge-success', done: 'badge-info', full: 'badge-success', partial: 'badge-warning', cancelled: 'badge-danger' };
@@ -225,22 +208,22 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-[88px] rounded-xl bg-[#DCDCDC] animate-pulse" />
+        <div className="h-[88px] rounded-xl bg-muted animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-[#D1D1D1] p-5 animate-pulse">
+            <div key={i} className="crm-card animate-pulse">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#DCDCDC]" />
-                <div className="w-16 h-4 bg-[#DCDCDC] rounded" />
+                <div className="w-10 h-10 rounded-xl bg-muted" />
+                <div className="w-16 h-4 bg-muted rounded" />
               </div>
-              <div className="h-7 bg-[#DCDCDC] rounded w-20 mb-1" />
-              <div className="h-3 bg-[#DCDCDC] rounded w-28" />
+              <div className="h-7 bg-muted rounded w-20 mb-1" />
+              <div className="h-3 bg-muted rounded w-28" />
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-[#D1D1D1] p-6 animate-pulse h-[320px]" />
+            <div key={i} className="crm-card animate-pulse h-[320px]" />
           ))}
         </div>
       </div>
@@ -250,8 +233,8 @@ export default function Dashboard() {
   if (error || !stats) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-[#B20600] mb-3">{error}</p>
-        <button onClick={fetchStats} className="px-4 py-2 bg-[#FF5F00] text-white rounded-lg text-sm hover:bg-[#CC4D00] transition-colors">Retry</button>
+        <p className="text-destructive mb-3">{error}</p>
+        <button onClick={fetchStats} className="crm-btn-primary">Retry</button>
       </div>
     );
   }
@@ -262,24 +245,26 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-[#00092C] via-[#0A1040] to-[#0A1A4A] rounded-xl p-6 text-white relative overflow-hidden"
+        className="relative rounded-2xl p-6 text-white overflow-hidden bg-gradient-to-r from-[#00092C] via-[#0A1040] to-[#0A1A4A] dark:from-[#070A12] dark:via-[#0A0E1A] dark:to-[#0D1225]"
       >
-        <div className="absolute top-0 right-0 w-72 h-72 bg-[#FF5F00]/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-[#FF5F00]/5 rounded-full translate-y-1/2" />
-        <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-[#B20600]/10 rounded-full" />
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-primary/5 rounded-full translate-y-1/2" />
+        <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-red-500/10 rounded-full" />
+
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold">Welcome back, {admin?.fullName || 'Admin'}!</h2>
-            <p className="text-[#8892B0] text-sm mt-1">Here&apos;s your shop performance at a glance.</p>
+            <h2 className="text-xl font-bold tracking-tight">Welcome back, {admin?.fullName || 'Admin'}! 👋</h2>
+            <p className="text-white/50 text-sm mt-1">Here&apos;s your shop performance at a glance.</p>
           </div>
-          <div className="flex gap-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2.5 border border-white/10">
-              <p className="text-[0.65rem] text-[#8892B0] uppercase tracking-wider">Today&apos;s Sales</p>
+          <div className="flex gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-white/10">
+              <p className="text-[0.65rem] text-white/40 uppercase tracking-wider font-medium">Today&apos;s Sales</p>
               <p className="text-lg font-bold text-white">{stats.todaySales}</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2.5 border border-white/10">
-              <p className="text-[0.65rem] text-[#8892B0] uppercase tracking-wider">Today&apos;s Revenue</p>
-              <p className="text-lg font-bold text-[#0FA968]">{formatINR(stats.todayRevenue)}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-white/10">
+              <p className="text-[0.65rem] text-white/40 uppercase tracking-wider font-medium">Today&apos;s Revenue</p>
+              <p className="text-lg font-bold text-emerald-400">{formatINR(stats.todayRevenue)}</p>
             </div>
           </div>
         </div>
@@ -293,14 +278,14 @@ export default function Dashboard() {
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="bg-gradient-to-br from-[#00092C] to-[#0A1A4A] rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer"
+          className="rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer bg-gradient-to-br from-[#00092C] to-[#0A1A4A] dark:from-[#070A12] dark:to-[#0D1225]"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#FF5F00]/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
           <div className="relative">
             <span className="text-2xl">📱</span>
-            <p className="text-xs text-[#8892B0] font-medium mt-1">Aaj Buy</p>
-            <p className="text-2xl font-bold mt-0.5">{stats.aajBuyCount}</p>
-            <p className="text-xs text-[#0FA968] font-semibold mt-1">{formatINR(stats.aajBuyAmount)}</p>
+            <p className="text-xs text-white/40 font-medium mt-1.5 uppercase tracking-wider">Aaj Buy</p>
+            <p className="text-2xl font-bold mt-0.5 tracking-tight">{stats.aajBuyCount}</p>
+            <p className="text-xs text-emerald-400 font-semibold mt-1">{formatINR(stats.aajBuyAmount)}</p>
           </div>
         </motion.div>
 
@@ -310,14 +295,14 @@ export default function Dashboard() {
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="bg-gradient-to-br from-[#0A1A4A] to-[#1A2560] rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer"
+          className="rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer bg-gradient-to-br from-[#0A1A4A] to-[#1A2560] dark:from-[#0D1225] dark:to-[#151C38]"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#0FA968]/15 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/15 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
           <div className="relative">
             <span className="text-2xl">💰</span>
-            <p className="text-xs text-[#8892B0] font-medium mt-1">Aaj Sell</p>
-            <p className="text-2xl font-bold mt-0.5">{stats.aajSellCount}</p>
-            <p className="text-xs text-[#0FA968] font-semibold mt-1">{formatINR(stats.aajSellAmount)}</p>
+            <p className="text-xs text-white/40 font-medium mt-1.5 uppercase tracking-wider">Aaj Sell</p>
+            <p className="text-2xl font-bold mt-0.5 tracking-tight">{stats.aajSellCount}</p>
+            <p className="text-xs text-emerald-400 font-semibold mt-1">{formatINR(stats.aajSellAmount)}</p>
           </div>
         </motion.div>
 
@@ -329,18 +314,16 @@ export default function Dashboard() {
           animate="visible"
           className={`rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer ${
             stats.todayProfit >= 0
-              ? 'bg-gradient-to-br from-[#0A8A54] to-[#0FA968]'
-              : 'bg-gradient-to-br from-[#8B0500] to-[#B20600]'
+              ? 'bg-gradient-to-br from-emerald-700 to-emerald-600 dark:from-emerald-900 dark:to-emerald-800'
+              : 'bg-gradient-to-br from-red-800 to-red-700 dark:from-red-950 dark:to-red-900'
           }`}
         >
-          <div className={`absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500 ${
-            stats.todayProfit >= 0 ? 'bg-white/10' : 'bg-white/10'
-          }`} />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
           <div className="relative">
             <span className="text-2xl">📊</span>
-            <p className="text-xs text-white/70 font-medium mt-1">Today Profit</p>
-            <p className={`text-2xl font-bold mt-0.5 ${stats.todayProfit >= 0 ? '' : ''}`}>{formatINR(Math.abs(stats.todayProfit))}</p>
-            <p className={`text-xs font-semibold mt-1 ${stats.todayProfit >= 0 ? 'text-white/80' : 'text-white/80'}`}>
+            <p className="text-xs text-white/60 font-medium mt-1.5 uppercase tracking-wider">Today Profit</p>
+            <p className="text-2xl font-bold mt-0.5 tracking-tight">{formatINR(Math.abs(stats.todayProfit))}</p>
+            <p className="text-xs font-semibold mt-1 text-white/70">
               {stats.todayProfit >= 0 ? '✅ In profit' : '⚠️ In loss'}
             </p>
           </div>
@@ -352,14 +335,14 @@ export default function Dashboard() {
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="bg-gradient-to-br from-[#CC4D00] to-[#FF5F00] rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer"
+          className="rounded-xl p-5 text-white relative overflow-hidden group cursor-pointer bg-gradient-to-br from-orange-600 to-primary dark:from-orange-800 dark:to-orange-700"
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
           <div className="relative">
             <span className="text-2xl">⏳</span>
-            <p className="text-xs text-white/80 font-medium mt-1">Pending</p>
-            <p className="text-2xl font-bold mt-0.5">{stats.totalPendingItems}</p>
-            <p className="text-xs text-white/80 font-semibold mt-1">
+            <p className="text-xs text-white/60 font-medium mt-1.5 uppercase tracking-wider">Pending</p>
+            <p className="text-2xl font-bold mt-0.5 tracking-tight">{stats.totalPendingItems}</p>
+            <p className="text-xs text-white/70 font-semibold mt-1">
               {stats.repairNeededCount} repairs · {stats.salesByPayment.pending + stats.salesByPayment.partial} unpaid
             </p>
           </div>
@@ -369,14 +352,14 @@ export default function Dashboard() {
       {/* ═══════ Stat Cards ═══════ */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Customers', value: stats.totalCustomers, icon: Users, bg: '#FFF5F0', iconColor: '#FF5F00', sub: `${stats.customersByType.seller} sellers · ${stats.customersByType.buyer} buyers` },
-          { label: 'Total Inventory', value: stats.totalInventory, icon: Smartphone, bg: '#EEEEF5', iconColor: '#00092C', sub: `${stats.inventoryByStatus.pending} pending · ${stats.inventoryByStatus.done} sold` },
-          { label: 'Total Revenue', value: formatINR(stats.totalRevenue), icon: IndianRupee, bg: '#ECFDF5', iconColor: '#0FA968', sub: `₹${formatCompact(stats.totalPaid)} received`, trend: 'up' },
-          { label: 'Total Sales', value: stats.totalSales, icon: Receipt, bg: '#F0FFF5', iconColor: '#0FA968', sub: `₹${formatCompact(stats.avgProfitPerSale)} avg profit`, trend: 'up' },
-          { label: 'Pending Amount', value: formatINR(stats.totalPending), icon: CircleDollarSign, bg: '#FFF8EB', iconColor: '#E8960C', sub: `${stats.salesByPayment.pending} unpaid invoices`, trend: stats.totalPending > 0 ? 'down' : undefined },
-          { label: 'Total Profit', value: formatINR(stats.totalProfit), icon: TrendingUp, bg: stats.totalProfit >= 0 ? '#ECFDF5' : '#FFF5F3', iconColor: stats.totalProfit >= 0 ? '#0FA968' : '#B20600', sub: `${((stats.totalProfit / Math.max(stats.totalRevenue, 1)) * 100).toFixed(1)}% margin`, trend: stats.totalProfit >= 0 ? 'up' : 'down' },
-          { label: 'Pending Orders', value: stats.totalOrders > 0 ? stats.ordersByStatus.pending : 0, icon: ShoppingBag, bg: '#FFF8EB', iconColor: '#E8960C', sub: `${stats.ordersByStatus.processing} processing · ${stats.ordersByStatus.completed} done` },
-          { label: 'Repairs', value: stats.repairNeededCount, icon: Wrench, bg: '#FFF5F3', iconColor: '#B20600', sub: `${stats.repairCompletedCount} completed`, trend: stats.repairNeededCount > 0 ? 'down' : undefined },
+          { label: 'Total Customers', value: stats.totalCustomers, icon: Users, iconBg: 'bg-primary/10', iconColor: 'text-primary', sub: `${stats.customersByType.seller} sellers · ${stats.customersByType.buyer} buyers` },
+          { label: 'Total Inventory', value: stats.totalInventory, icon: Smartphone, iconBg: 'bg-indigo-500/10', iconColor: 'text-indigo-500 dark:text-indigo-400', sub: `${stats.inventoryByStatus.pending} pending · ${stats.inventoryByStatus.done} sold` },
+          { label: 'Total Revenue', value: formatINR(stats.totalRevenue), icon: IndianRupee, iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500 dark:text-emerald-400', sub: `₹${formatCompact(stats.totalPaid)} received`, trend: 'up' as const },
+          { label: 'Total Sales', value: stats.totalSales, icon: Receipt, iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500 dark:text-emerald-400', sub: `₹${formatCompact(stats.avgProfitPerSale)} avg profit`, trend: 'up' as const },
+          { label: 'Pending Amount', value: formatINR(stats.totalPending), icon: CircleDollarSign, iconBg: 'bg-amber-500/10', iconColor: 'text-amber-500 dark:text-amber-400', sub: `${stats.salesByPayment.pending} unpaid invoices`, trend: stats.totalPending > 0 ? 'down' as const : undefined },
+          { label: 'Total Profit', value: formatINR(stats.totalProfit), icon: TrendingUp, iconBg: stats.totalProfit >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10', iconColor: stats.totalProfit >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400', sub: `${((stats.totalProfit / Math.max(stats.totalRevenue, 1)) * 100).toFixed(1)}% margin`, trend: stats.totalProfit >= 0 ? 'up' as const : 'down' as const },
+          { label: 'Pending Orders', value: stats.totalOrders > 0 ? stats.ordersByStatus.pending : 0, icon: ShoppingBag, iconBg: 'bg-amber-500/10', iconColor: 'text-amber-500 dark:text-amber-400', sub: `${stats.ordersByStatus.processing} processing · ${stats.ordersByStatus.completed} done` },
+          { label: 'Repairs', value: stats.repairNeededCount, icon: Wrench, iconBg: 'bg-red-500/10', iconColor: 'text-red-500 dark:text-red-400', sub: `${stats.repairCompletedCount} completed`, trend: stats.repairNeededCount > 0 ? 'down' as const : undefined },
         ].map((card, i) => {
           const Icon = card.icon;
           return (
@@ -386,21 +369,25 @@ export default function Dashboard() {
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              className="bg-white rounded-xl border border-[#D1D1D1] p-5 hover:shadow-lg hover:shadow-black/[0.04] transition-all duration-300 group cursor-pointer"
+              className="crm-card group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: card.bg }}>
-                  <Icon size={20} style={{ color: card.iconColor }} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}>
+                  <Icon size={20} className={card.iconColor} />
                 </div>
                 {card.trend && (
-                  <div className={`flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md ${card.trend === 'up' ? 'bg-[#ECFDF5] text-[#0FA968]' : 'bg-[#FFF5F3] text-[#B20600]'}`}>
+                  <div className={`flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md ${
+                    card.trend === 'up'
+                      ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
+                      : 'bg-red-500/10 text-red-500 dark:text-red-400'
+                  }`}>
                     {card.trend === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                   </div>
                 )}
               </div>
-              <p className="text-xs text-[#555555] font-medium mb-0.5">{card.label}</p>
-              <p className="text-2xl font-bold text-[#00092C] leading-tight">{card.value}</p>
-              <p className="text-[0.7rem] text-[#888888] mt-1">{card.sub}</p>
+              <p className="text-xs text-muted-foreground font-medium mb-0.5">{card.label}</p>
+              <p className="text-2xl font-bold text-foreground leading-tight tracking-tight">{card.value}</p>
+              <p className="text-[0.7rem] text-muted-foreground/70 mt-1">{card.sub}</p>
             </motion.div>
           );
         })}
@@ -408,15 +395,15 @@ export default function Dashboard() {
 
       {/* ═══════ Charts Row 1: Pie Charts ═══════ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Inventory by Condition - Pie */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Inventory by Condition */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" className="crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Inventory Condition</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Distribution by physical state</p>
+              <h3 className="font-semibold text-foreground text-sm">Inventory Condition</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Distribution by physical state</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#EEEEF5] flex items-center justify-center">
-              <Smartphone size={16} className="text-[#00092C]" />
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+              <Smartphone size={16} className="text-indigo-500 dark:text-indigo-400" />
             </div>
           </div>
           {conditionPieData.length > 0 ? (
@@ -437,22 +424,22 @@ export default function Dashboard() {
             {conditionPieData.map((d, i) => (
               <div key={d.name} className="flex items-center gap-1.5 text-xs">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS_ALT[i % PIE_COLORS_ALT.length] }} />
-                <span className="text-[#555555]">{d.name}</span>
-                <span className="font-bold text-[#00092C]">{d.value}</span>
+                <span className="text-muted-foreground">{d.name}</span>
+                <span className="font-bold text-foreground">{d.value}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Payment Status - Pie */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.1 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Payment Status */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.1 }} className="crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Payment Status</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Sales by payment completion</p>
+              <h3 className="font-semibold text-foreground text-sm">Payment Status</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Sales by payment completion</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] flex items-center justify-center">
-              <CircleDollarSign size={16} className="text-[#0FA968]" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <CircleDollarSign size={16} className="text-emerald-500 dark:text-emerald-400" />
             </div>
           </div>
           {paymentPieData.length > 0 ? (
@@ -473,22 +460,22 @@ export default function Dashboard() {
             {paymentPieData.map((d, i) => (
               <div key={d.name} className="flex items-center gap-1.5 text-xs">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-[#555555]">{d.name}</span>
-                <span className="font-bold text-[#00092C]">{d.value}</span>
+                <span className="text-muted-foreground">{d.name}</span>
+                <span className="font-bold text-foreground">{d.value}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Customer Type - Pie */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Customer Type */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Customer Types</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Seller vs Buyer breakdown</p>
+              <h3 className="font-semibold text-foreground text-sm">Customer Types</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Seller vs Buyer breakdown</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#FFF5F0] flex items-center justify-center">
-              <Users size={16} className="text-[#FF5F00]" />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users size={16} className="text-primary" />
             </div>
           </div>
           {customerTypeData.length > 0 ? (
@@ -496,7 +483,7 @@ export default function Dashboard() {
               <PieChart>
                 <Pie data={customerTypeData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" labelLine={false} label={PieLabel} stroke="none">
                   {customerTypeData.map((_, i) => (
-                    <Cell key={i} fill={[COLORS.orange, COLORS.green, COLORS.navy][i % 3]} />
+                    <Cell key={i} fill={['#FF5F00', '#059669', '#6366F1'][i % 3]} />
                   ))}
                 </Pie>
                 <Tooltip content={<ChartTooltip />} />
@@ -508,9 +495,9 @@ export default function Dashboard() {
           <div className="flex justify-center gap-4 mt-2">
             {customerTypeData.map((d, i) => (
               <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: [COLORS.orange, COLORS.green, COLORS.navy][i % 3] }} />
-                <span className="text-[#555555]">{d.name}</span>
-                <span className="font-bold text-[#00092C]">{d.value}</span>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ['#FF5F00', '#059669', '#6366F1'][i % 3] }} />
+                <span className="text-muted-foreground">{d.name}</span>
+                <span className="font-bold text-foreground">{d.value}</span>
               </div>
             ))}
           </div>
@@ -519,25 +506,25 @@ export default function Dashboard() {
 
       {/* ═══════ Charts Row 2: Bar Charts ═══════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Revenue - Histogram */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.25 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Monthly Revenue */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.25 }} className="crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Monthly Revenue</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Last 6 months performance</p>
+              <h3 className="font-semibold text-foreground text-sm">Monthly Revenue</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Last 6 months performance</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] flex items-center justify-center">
-              <IndianRupee size={16} className="text-[#0FA968]" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <IndianRupee size={16} className="text-emerald-500 dark:text-emerald-400" />
             </div>
           </div>
           {stats.monthlyRevenue.some(m => m.revenue > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={stats.monthlyRevenue} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEEEEE" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: '#555555', fontSize: 12 }} axisLine={{ stroke: '#D1D1D1' }} tickLine={false} />
-                <YAxis tick={{ fill: '#555555', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatCompact(v)} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatCompact(v)} />
                 <Tooltip content={<ChartTooltip isCurrency />} />
-                <Bar dataKey="revenue" fill={COLORS.orange} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenue" fill="#FF5F00" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -545,25 +532,25 @@ export default function Dashboard() {
           )}
         </motion.div>
 
-        {/* Monthly Sales Count - Histogram */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.3 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Monthly Sales Count */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.3 }} className="crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Monthly Sales Volume</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Units sold per month</p>
+              <h3 className="font-semibold text-foreground text-sm">Monthly Sales Volume</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Units sold per month</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#EEEEF5] flex items-center justify-center">
-              <Receipt size={16} className="text-[#00092C]" />
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+              <Receipt size={16} className="text-indigo-500 dark:text-indigo-400" />
             </div>
           </div>
           {stats.monthlySalesCount.some(m => m.count > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={stats.monthlySalesCount} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEEEEE" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: '#555555', fontSize: 12 }} axisLine={{ stroke: '#D1D1D1' }} tickLine={false} />
-                <YAxis tick={{ fill: '#555555', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="count" fill={COLORS.navy} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="#6366F1" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -574,23 +561,23 @@ export default function Dashboard() {
 
       {/* ═══════ Charts Row 3: Top Brands + Order Status ═══════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Top Brands - Horizontal Bar */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.35 }} className="lg:col-span-2 bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Top Brands */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.35 }} className="lg:col-span-2 crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Top Brands</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Most stocked phone brands</p>
+              <h3 className="font-semibold text-foreground text-sm">Top Brands</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Most stocked phone brands</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#FFF5F0] flex items-center justify-center">
-              <Package size={16} className="text-[#FF5F00]" />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Package size={16} className="text-primary" />
             </div>
           </div>
           {stats.topBrands.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(stats.topBrands.length * 50, 200)}>
               <BarChart data={stats.topBrands} layout="vertical" barCategoryGap="15%" margin={{ left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEEEEE" horizontal={false} />
-                <XAxis type="number" tick={{ fill: '#555555', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#00092C', fontSize: 13, fontWeight: 500 }} axisLine={false} tickLine={false} width={80} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                <XAxis type="number" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" tick={{ fill: 'var(--foreground)', fontSize: 13, fontWeight: 500 }} axisLine={false} tickLine={false} width={80} />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                   {stats.topBrands.map((_, i) => (
@@ -604,22 +591,22 @@ export default function Dashboard() {
           )}
         </motion.div>
 
-        {/* Order Status - Donut */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.4 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+        {/* Order Status */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.4 }} className="crm-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-[#00092C] text-sm">Order Status</h3>
-              <p className="text-xs text-[#888888] mt-0.5">{stats.totalOrders} total orders</p>
+              <h3 className="font-semibold text-foreground text-sm">Order Status</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">{stats.totalOrders} total orders</p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#FFF8EB] flex items-center justify-center">
-              <ShoppingBag size={16} className="text-[#E8960C]" />
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+              <ShoppingBag size={16} className="text-amber-500 dark:text-amber-400" />
             </div>
           </div>
           {(() => {
             const orderData = Object.entries(stats.ordersByStatus)
               .filter(([, v]) => v > 0)
               .map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }));
-            const orderColors = ['#E8960C', '#FF5F00', '#0FA968', '#B20600'];
+            const orderColors = ['#D97706', '#FF5F00', '#059669', '#DC2626'];
             if (orderData.length === 0) return <EmptyChart message="No orders yet" />;
             return (
               <>
@@ -637,8 +624,8 @@ export default function Dashboard() {
                   {orderData.map((d, i) => (
                     <div key={d.name} className="flex items-center gap-1.5 text-xs">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: orderColors[i % orderColors.length] }} />
-                      <span className="text-[#555555]">{d.name}</span>
-                      <span className="font-bold text-[#00092C]">{d.value}</span>
+                      <span className="text-muted-foreground">{d.name}</span>
+                      <span className="font-bold text-foreground">{d.value}</span>
                     </div>
                   ))}
                 </div>
@@ -651,16 +638,16 @@ export default function Dashboard() {
       {/* ═══════ Recent Tables ═══════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Sales */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.45 }} className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#EEEEEE] flex items-center justify-between">
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.45 }} className="crm-card p-0 overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-[#00092C]">Recent Sales</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Last 5 transactions</p>
+              <h3 className="font-semibold text-foreground">Recent Sales</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Last 5 transactions</p>
             </div>
-            <Receipt size={18} className="text-[#BBBBBB]" />
+            <Receipt size={18} className="text-muted-foreground/30" />
           </div>
           {stats.recentSales.length === 0 ? (
-            <div className="p-8 text-center text-[#888888] text-sm">No sales yet</div>
+            <div className="p-8 text-center text-muted-foreground/50 text-sm">No sales yet</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="crm-table">
@@ -672,7 +659,7 @@ export default function Dashboard() {
                       <td>{sale.inventory ? `${sale.inventory.brand} ${sale.inventory.model}` : '—'}</td>
                       <td className="font-semibold">{formatINR(sale.salePrice)}</td>
                       <td><span className={statusBadge(sale.paymentStatus)}>{sale.paymentStatus}</span></td>
-                      <td className="text-[#555555] text-xs flex items-center gap-1"><Clock size={10} />{new Date(sale.saleDate).toLocaleDateString('en-IN')}</td>
+                      <td className="text-muted-foreground text-xs flex items-center gap-1"><Clock size={10} />{new Date(sale.saleDate).toLocaleDateString('en-IN')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -682,16 +669,16 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Recent Inventory */}
-        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.5 }} className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#EEEEEE] flex items-center justify-between">
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.5 }} className="crm-card p-0 overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-[#00092C]">Recent Inventory</h3>
-              <p className="text-xs text-[#888888] mt-0.5">Latest phone additions</p>
+              <h3 className="font-semibold text-foreground">Recent Inventory</h3>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Latest phone additions</p>
             </div>
-            <Smartphone size={18} className="text-[#BBBBBB]" />
+            <Smartphone size={18} className="text-muted-foreground/30" />
           </div>
           {stats.recentInventory.length === 0 ? (
-            <div className="p-8 text-center text-[#888888] text-sm">No inventory yet</div>
+            <div className="p-8 text-center text-muted-foreground/50 text-sm">No inventory yet</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="crm-table">
@@ -701,14 +688,14 @@ export default function Dashboard() {
                     <tr key={item.id}>
                       <td>
                         <div className="font-medium">{item.brand} {item.model}</div>
-                        {item.seller && <div className="text-xs text-[#888888]">From: {item.seller.fullName}</div>}
+                        {item.seller && <div className="text-xs text-muted-foreground">From: {item.seller.fullName}</div>}
                       </td>
                       <td><span className={conditionBadge(item.condition)}>{item.condition}</span></td>
                       <td className="font-semibold">{formatINR(item.buyPrice)}</td>
                       <td><span className={statusBadge(item.status)}>{item.status}</span></td>
                       <td>
                         {item.repairRequired && (
-                          <span className="inline-flex items-center gap-1 text-[#B20600] text-xs">
+                          <span className="inline-flex items-center gap-1 text-destructive text-xs">
                             <Wrench size={12} />
                             {item.repairStatus === 'completed' ? 'Done' : 'Needed'}
                           </span>

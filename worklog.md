@@ -249,3 +249,79 @@ Applied color replacement rules to three CRM module components:
 - Slate bg/border: `bg-slate-50` → `bg-[#FAFAFA]`, `border-slate-200` → `border-[#D1D1D1]`
 
 Verification: ESLint passes with zero errors. Dev server compiles successfully. All functionality preserved.
+
+---
+## Task ID: 16 - dark-mode-updater
+### Work Task
+Update OrdersModule.tsx and AdminModule.tsx to use semantic Tailwind CSS variable classes for dark mode support. Replace all hardcoded hex color values with theme-aware semantic classes (e.g., `text-foreground`, `bg-card`, `text-muted-foreground`, `bg-primary`, `border-border`).
+
+### Work Summary
+Applied semantic color class replacements to both CRM module components for dark mode compatibility:
+
+**OrdersModule.tsx** (30+ replacements across 12 class patterns):
+- `statusColors.processing`: `bg-[#FFF5F0] text-[#CC4D00] border-[#FFD4BF]` → `bg-primary/5 text-primary border-primary/20`
+- Primary buttons (3 instances): `bg-[#FF5F00] hover:bg-[#CC4D00]` → `bg-primary hover:bg-primary/90`
+- Navy text (8 instances): `text-[#00092C]` → `text-foreground`
+- Muted text: `text-[#555555]` → `text-muted-foreground` (2 instances)
+- Gray text (3 instances): `text-[#888888]` → `text-muted-foreground`
+- Card backgrounds (2 instances): `bg-white` → `bg-card`
+- Borders: `border-[#D1D1D1]` → `border-border` (2 instances), `border-[#EEEEEE]` → `border-border`
+- Table header: `bg-[#FAFAFA]/80` → `bg-muted/50`
+- Table row hover: `hover:bg-[#F0F0F0]/50` → `hover:bg-muted/50`
+- Action hover: `hover:text-[#FF5F00]` → `hover:text-primary`
+- Status colors without rules (pending amber, completed green, cancelled red) left unchanged.
+
+**AdminModule.tsx** (25+ replacements across 16 class patterns):
+- `roleColors.admin`: `bg-[#FFF5F0] text-[#00092C] border-[#FFD4BF]` → `bg-primary/10 text-primary border-primary/20`
+- Primary button: `bg-[#FF5F00] hover:bg-[#CC4D00]` → `bg-primary hover:bg-primary/90`
+- Navy text (9 instances): `text-[#00092C]` → `text-foreground`
+- Muted text: `text-[#555555]` → `text-muted-foreground` (2 instances)
+- Gray text (5 instances): `text-[#888888]` → `text-muted-foreground`
+- Card background: `bg-white` → `bg-card`
+- Border: `border-[#D1D1D1]` → `border-border`
+- Logged-in indicator: `bg-[#FFF5F0] border-[#FFD4BF]` → `bg-primary/5 border-primary/20`
+- Primary accent text: `text-[#FF5F00]` → `text-primary` (2 instances)
+- Hover states: `hover:text-[#FF5F00]` → `hover:text-primary`, `hover:text-[#00092C]` → `hover:text-foreground`, `hover:text-[#B20600]` → `hover:text-destructive`
+- Table header: `bg-[#FAFAFA]/80` → `bg-muted/50`
+- Table row hover: `hover:bg-[#FAFAFA]/50` → `hover:bg-muted/50`
+- Destructive dialog title: `text-[#B20600]` → `text-destructive`
+- Master role amber colors left unchanged (intentional gold accent)
+
+Verification: ESLint zero errors. Zero hardcoded hex color values remain in either file (verified via ripgrep). All functionality preserved.
+
+---
+## Task ID: 17 - dark-mode-updater
+### Work Task
+Update InventoryModule.tsx and ShopSettings.tsx to use semantic Tailwind CSS variable classes for dark mode support. Replace all hardcoded hex color values with theme-aware semantic classes.
+
+### Work Summary
+Applied semantic color class replacements to both CRM module components for dark mode compatibility:
+
+**InventoryModule.tsx** (40+ replacements across 15 class patterns):
+- `statusBadge` object: `bg-[#FFF8EB] text-amber-800` → `badge-warning` (kept border), `bg-green-100 text-green-800` → `badge-success` (kept border), `bg-[#FFF5F0] text-[#00092C] border-[#FFD4BF]` → `bg-primary/10 text-primary border-primary/20`
+- `conditionBadge` object: `bg-green-100 text-green-800` → `badge-success` (kept border), `bg-[#FFF8EB] text-amber-800` → `badge-warning` (kept border), `bg-red-100 text-red-800` → `badge-danger` (kept border)
+- `repairStatusColor` object: `text-[#888888]` → `text-muted-foreground`, `text-[#FF5F00]` → `text-primary`
+- Emerald accent icons (2): `text-[#0FA968]` → `text-emerald-500 dark:text-emerald-400`
+- Navy text (10+): `text-[#00092C]` → `text-foreground`
+- Muted text (10+): `text-[#555555]` → `text-muted-foreground`
+- Gray text (5+): `text-[#888888]` → `text-muted-foreground`
+- Empty state icon: `text-[#BBBBBB]` → `text-muted-foreground/40`
+- Card backgrounds (4): `bg-white` → `bg-card`
+- Borders (2): `border-[#D1D1D1]` → `border-border`
+- Table header: `bg-[#FAFAFA] hover:bg-[#F0F0F0]` → `bg-muted/50 hover:bg-muted`
+- Edit action hover: `hover:text-[#0FA968]` → `hover:text-emerald-500 dark:hover:text-emerald-400`
+- Destructive text (2): `text-[#B20600]` → `text-destructive`
+- Amber repair section colors left unchanged (intentional warning accent)
+
+**ShopSettings.tsx** (10 replacements across 7 class patterns):
+- Primary icon bg: `bg-[#FF5F00]` → `bg-primary`
+- Save button: `bg-[#FF5F00] hover:bg-[#CC4D00] text-white` → `bg-primary hover:bg-primary/90 text-primary-foreground`
+- Navy text (2): `text-[#00092C]` → `text-foreground`
+- Muted text (3): `text-[#555555]` → `text-muted-foreground`
+- Gray text (1): `text-[#888888]` → `text-muted-foreground`
+- Card background: `bg-white` → `bg-card`
+- Borders (2): `border-[#D1D1D1]` → `border-border`
+- Card header: `bg-[#FAFAFA]` → `bg-muted/50`
+- Store icon: `text-white` → `text-primary-foreground`
+
+Verification: ESLint zero errors. Zero hardcoded hex color values remain in either file (verified via ripgrep). Dev server compiles successfully. All functionality preserved.

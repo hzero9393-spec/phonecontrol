@@ -135,21 +135,21 @@ const formatINR = (amount: number): string => {
 };
 
 const statusBadge: Record<string, string> = {
-  pending: 'bg-[#FFF8EB] text-amber-800 border-amber-200',
-  complete: 'bg-green-100 text-green-800 border-green-200',
-  done: 'bg-[#FFF5F0] text-[#00092C] border-[#FFD4BF]',
+  pending: 'badge-warning border-amber-200',
+  complete: 'badge-success border-green-200',
+  done: 'bg-primary/10 text-primary border-primary/20',
 };
 
 const conditionBadge: Record<string, string> = {
-  good: 'bg-green-100 text-green-800 border-green-200',
-  average: 'bg-[#FFF8EB] text-amber-800 border-amber-200',
-  poor: 'bg-red-100 text-red-800 border-red-200',
+  good: 'badge-success border-green-200',
+  average: 'badge-warning border-amber-200',
+  poor: 'badge-danger border-red-200',
 };
 
 const repairStatusColor: Record<string, string> = {
-  none: 'text-[#888888]',
+  none: 'text-muted-foreground',
   pending: 'text-amber-500',
-  in_progress: 'text-[#FF5F00]',
+  in_progress: 'text-primary',
   completed: 'text-green-500',
 };
 
@@ -408,8 +408,8 @@ export default function InventoryModule() {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Smartphone className="h-5 w-5 text-[#0FA968]" />
-          <h2 className="text-xl font-semibold text-[#00092C]">Inventory</h2>
+          <Smartphone className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+          <h2 className="text-xl font-semibold text-foreground">Inventory</h2>
           <Badge variant="secondary" className="text-xs">
             {pagination.total} items
           </Badge>
@@ -421,9 +421,9 @@ export default function InventoryModule() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col gap-3 rounded-lg border border-[#D1D1D1] bg-white p-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#888888]" />
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by brand, model or IMEI..."
             value={searchInput}
@@ -458,22 +458,22 @@ export default function InventoryModule() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-[#D1D1D1] bg-white">
+      <div className="rounded-lg border border-border bg-card">
         <div className="max-h-[calc(100vh-340px)] overflow-x-auto overflow-y-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-[#FAFAFA] hover:bg-[#F0F0F0]">
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Brand</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Model</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">RAM/Storage</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Color</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">IMEI</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Condition</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Status</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Buy Price</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Repair</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555]">Seller</TableHead>
-                <TableHead className="text-xs font-semibold uppercase text-[#555555] text-right">Actions</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted">
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Brand</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Model</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">RAM/Storage</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Color</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">IMEI</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Condition</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Status</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Buy Price</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Repair</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Seller</TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-muted-foreground text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -482,7 +482,7 @@ export default function InventoryModule() {
                   <TableCell colSpan={11} className="h-32 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
-                      <span className="text-sm text-[#555555]">Loading...</span>
+                      <span className="text-sm text-muted-foreground">Loading...</span>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -490,9 +490,9 @@ export default function InventoryModule() {
                 <TableRow>
                   <TableCell colSpan={11} className="h-32 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Smartphone className="h-8 w-8 text-[#BBBBBB]" />
-                      <p className="text-sm text-[#555555]">No phones found</p>
-                      <p className="text-xs text-[#888888]">
+                      <Smartphone className="h-8 w-8 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">No phones found</p>
+                      <p className="text-xs text-muted-foreground">
                         {searchQuery || statusFilter !== 'all' || conditionFilter !== 'all'
                           ? 'Try adjusting your filters'
                           : 'Click "Add Phone" to get started'}
@@ -503,13 +503,13 @@ export default function InventoryModule() {
               ) : (
                 items.map((item) => (
                   <TableRow key={item.id} className="group">
-                    <TableCell className="font-medium text-[#00092C]">{item.brand}</TableCell>
-                    <TableCell className="text-[#00092C]">{item.model}</TableCell>
-                    <TableCell className="text-[#00092C] text-xs">
+                    <TableCell className="font-medium text-foreground">{item.brand}</TableCell>
+                    <TableCell className="text-foreground">{item.model}</TableCell>
+                    <TableCell className="text-foreground text-xs">
                       {item.ram && item.storage ? `${item.ram} / ${item.storage}` : item.ram || item.storage || '-'}
                     </TableCell>
-                    <TableCell className="text-[#00092C] capitalize">{item.color || '-'}</TableCell>
-                    <TableCell className="font-mono text-xs text-[#00092C]">{item.imeiNo || '-'}</TableCell>
+                    <TableCell className="text-foreground capitalize">{item.color || '-'}</TableCell>
+                    <TableCell className="font-mono text-xs text-foreground">{item.imeiNo || '-'}</TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
@@ -526,20 +526,20 @@ export default function InventoryModule() {
                         {item.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-medium text-[#00092C]">{formatINR(item.buyPrice)}</TableCell>
+                    <TableCell className="font-medium text-foreground">{formatINR(item.buyPrice)}</TableCell>
                     <TableCell>
                       {item.repairRequired ? (
                         <div className="flex items-center gap-1.5" title={`Repair: ${repairStatusLabel[item.repairStatus] || item.repairStatus}`}>
-                          <Wrench className={`h-4 w-4 ${repairStatusColor[item.repairStatus] || 'text-[#888888]'}`} />
+                          <Wrench className={`h-4 w-4 ${repairStatusColor[item.repairStatus] || 'text-muted-foreground'}`} />
                           <span className="hidden text-xs lg:inline">
                             {repairStatusLabel[item.repairStatus] || item.repairStatus}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-[#888888]">-</span>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-[#00092C] text-sm">
+                    <TableCell className="text-foreground text-sm">
                       {item.seller?.name || '-'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -547,7 +547,7 @@ export default function InventoryModule() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#555555] hover:text-[#0FA968]"
+                          className="h-8 w-8 text-muted-foreground hover:text-emerald-500 dark:hover:text-emerald-400"
                           onClick={() => openEditDialog(item)}
                         >
                           <Edit className="h-4 w-4" />
@@ -555,7 +555,7 @@ export default function InventoryModule() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-[#555555] hover:text-red-600"
+                          className="h-8 w-8 text-muted-foreground hover:text-red-600"
                           onClick={() => openDeleteDialog(item)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -572,7 +572,7 @@ export default function InventoryModule() {
         {/* Pagination */}
         {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between border-t px-4 py-3">
-            <p className="text-xs text-[#555555]">
+            <p className="text-xs text-muted-foreground">
               Showing {(pagination.page - 1) * pagination.limit + 1}
               &ndash;
               {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
@@ -589,7 +589,7 @@ export default function InventoryModule() {
               </Button>
               {getPageNumbers().map((p, idx) =>
                 typeof p === 'string' ? (
-                  <span key={`ellipsis-${idx}`} className="px-1 text-xs text-[#888888]">
+                  <span key={`ellipsis-${idx}`} className="px-1 text-xs text-muted-foreground">
                     ...
                   </span>
                 ) : (
@@ -623,7 +623,7 @@ export default function InventoryModule() {
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-[#0FA968]" />
+              <Smartphone className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               {editingItem ? 'Edit Phone' : 'Add New Phone'}
             </DialogTitle>
             <DialogDescription>
@@ -635,7 +635,7 @@ export default function InventoryModule() {
             {/* Brand */}
             <div className="space-y-1.5">
               <Label htmlFor="brand">
-                Brand <span className="text-[#B20600]">*</span>
+                Brand <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="brand"
@@ -648,7 +648,7 @@ export default function InventoryModule() {
             {/* Model */}
             <div className="space-y-1.5">
               <Label htmlFor="model">
-                Model <span className="text-[#B20600]">*</span>
+                Model <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="model"
@@ -766,9 +766,9 @@ export default function InventoryModule() {
 
             {/* Repair Section */}
             <div className="space-y-3 sm:col-span-2">
-              <div className="flex items-center justify-between rounded-lg border border-[#D1D1D1] p-3">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
                 <div className="flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-[#555555]" />
+                  <Wrench className="h-4 w-4 text-muted-foreground" />
                   <Label htmlFor="repairRequired" className="cursor-pointer">Repair Required</Label>
                 </div>
                 <Switch
@@ -790,7 +790,7 @@ export default function InventoryModule() {
                       placeholder="Describe what needs to be repaired..."
                       value={form.repairDetails}
                       onChange={(e) => handleFormChange('repairDetails', e.target.value)}
-                      className="min-h-[60px] resize-none bg-white"
+                      className="min-h-[60px] resize-none bg-card"
                     />
                   </div>
 
@@ -807,7 +807,7 @@ export default function InventoryModule() {
                       placeholder="e.g. 2000"
                       value={form.repairCost}
                       onChange={(e) => handleFormChange('repairCost', e.target.value)}
-                      className="bg-white"
+                      className="bg-card"
                     />
                   </div>
 
@@ -815,7 +815,7 @@ export default function InventoryModule() {
                   <div className="space-y-1.5">
                     <Label className="text-amber-800">Repair Status</Label>
                     <Select value={form.repairStatus} onValueChange={(val) => handleFormChange('repairStatus', val)}>
-                      <SelectTrigger className="w-full bg-white">
+                      <SelectTrigger className="w-full bg-card">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -864,18 +864,18 @@ export default function InventoryModule() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-[#B20600]" />
+              <Trash2 className="h-5 w-5 text-destructive" />
               Delete Phone
             </AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete{' '}
-              <span className="font-semibold text-[#00092C]">
+              <span className="font-semibold text-foreground">
                 {deletingItem?.brand} {deletingItem?.model}
               </span>
               {deletingItem?.imeiNo ? (
                 <>
                   {' '}with IMEI{' '}
-                  <span className="font-mono text-[#00092C]">{deletingItem.imeiNo}</span>
+                  <span className="font-mono text-foreground">{deletingItem.imeiNo}</span>
                 </>
               ) : null}
               ? This action cannot be undone. Items with sale records cannot be deleted.

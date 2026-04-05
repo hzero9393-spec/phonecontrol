@@ -94,7 +94,7 @@ export default function ShopSettings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={28} className="animate-spin text-[#888888]" />
+        <Loader2 size={28} className="animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -103,19 +103,19 @@ export default function ShopSettings() {
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-[#00092C]">Shop Settings</h2>
-        <p className="text-sm text-[#555555]">Manage your shop details and business information</p>
+        <h2 className="text-xl font-bold text-foreground">Shop Settings</h2>
+        <p className="text-sm text-muted-foreground">Manage your shop details and business information</p>
       </div>
 
       {/* Shop Information Card */}
-      <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
-        <div className="px-6 py-4 bg-[#FAFAFA] border-b border-[#D1D1D1] flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#FF5F00] flex items-center justify-center">
-            <Store size={18} className="text-white" />
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="px-6 py-4 bg-muted/50 border-b border-border flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+            <Store size={18} className="text-primary-foreground" />
           </div>
           <div>
-            <h3 className="font-semibold text-[#00092C]">Shop Information</h3>
-            <p className="text-xs text-[#555555]">Basic details about your shop</p>
+            <h3 className="font-semibold text-foreground">Shop Information</h3>
+            <p className="text-xs text-muted-foreground">Basic details about your shop</p>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export default function ShopSettings() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white min-w-[120px]"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[120px]"
             >
               {saving ? (
                 <Loader2 size={16} className="mr-2 animate-spin" />
