@@ -375,3 +375,44 @@ Build Reports and Print PDF modules for PhoneCRM - equivalent to PHP report.php 
 - Dev server: compiles successfully
 - All 8 API endpoints tested and working (reports: buy, sell, profit, top; print: invoice, customers, buysell, stock)
 - Shop letterhead data correctly fetched and included in print views
+
+---
+## Task ID: 19 - Main Agent
+### Work Task
+Fix and enhance Inventory and Customers modules per spec - 4-section inventory form, customer history modal, pending payments.
+
+### Work Summary
+
+**Root Cause of Inventory Issue:**
+- Previous InventoryModule used shadcn/ui Select component which doesn't handle empty string values properly (can't select "None" for seller)
+- Used Dialog components with complex state management that could fail silently
+
+**Inventory Module (Complete Rewrite):**
+- Switched from Dialog to inline view toggle (list view ↔ form view) for reliable rendering
+- Used native HTML `<select>` and `<input>` elements instead of shadcn Select/Input for form reliability
+- **Section 1 - Phone Details:** brand (text), model (text), RAM (select dropdown: 2/3/4/6/8/12 GB), storage (select dropdown: 16/32/64/128/256/512 GB), color (text), IMEI (text)
+- **Section 2 - Condition & Price:** condition (radio: Good/Average/Poor with colored badges), status (select: Pending/Complete/Done), buy price (number)
+- **Section 3 - Seller Details:** seller dropdown from customers table, **Add New Seller** quick-add form (name + phone inline) that creates seller via API and auto-selects
+- **Section 4 - Repair:** repair required (radio: Yes/No), conditional repair section with details textarea, cost input, status select
+- List view: search by brand/model/IMEI, status/condition filters, SOLD badge for done items, edit/delete actions hidden on sold items
+- Custom toast notifications, Framer Motion delete confirmation modal, pagination
+- All using CRM design system classes (crm-card, crm-table, crm-btn-primary, badge-*)
+
+**Customers Module (Complete Rewrite):**
+- **Section 1 - Add Customer Form:** name, phone, address, aadhar_no, type (Seller/Buyer/Both) — inline expandable form
+- **Section 2 - Customer List:** table with search by name/phone (debounced), type filter, edit/delete buttons, pagination
+- **Section 3 - Customer History (Modal):** Click customer name → full-screen modal showing:
+  - Summary cards: Total Sold to Shop, Total Bought, Total Paid, Pending Amount
+  - "Phones Sold to Shop" table: Date, Brand, Model, IMEI, Condition, Buy Price, Status (with sale price if sold)
+  - "Phones Bought" table: Date, Phone, Sale Price, Paid, Pending, Payment Status, Warranty
+- **Section 4 - Pending Payments:** Toggle panel showing buyers with payment_status != 'full', sorted by pending amount descending
+
+**New API:**
+- `GET /api/crm/customers/history?id=xxx` — Returns customer's sold items, bought items, totals, and pending amounts
+
+**Testing:**
+- ESLint: zero errors
+- Inventory add tested successfully (Samsung Galaxy S24 created and listed)
+- Customer creation and history API tested (Rahul Sharma created, history returns correctly)
+- All pagination, filters, and CRUD operations working
+- Dev server compiles successfully
