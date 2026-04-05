@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCRMStore } from '@/store/use-crm-store';
-import { Smartphone, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Smartphone, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ThemeToggle from '@/components/ThemeToggle';
 
@@ -35,15 +35,25 @@ export default function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        if (res.status === 401) {
+          setError('Invalid username or password');
+        } else {
+          setError(data.error || `Login failed (Error ${res.status})`);
+        }
         return;
       }
 
       setAdmin(data);
       if (data.theme) setTheme(data.theme);
       toast({ title: 'Welcome back!', description: `Logged in as ${data.fullName}` });
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof TypeError && err.message === 'Failed to fetch'
+        ? 'Server is not responding. Please wait a moment and try again.'
+        : err instanceof Error
+        ? `Connection error: ${err.message}`
+        : 'Network error. Please check your connection and try again.';
+      setError(message);
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -76,8 +86,9 @@ export default function LoginForm() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-destructive/5 border border-destructive/15 rounded-lg text-sm text-destructive">
-              {error}
+            <div className="mb-4 p-3 bg-destructive/5 border border-destructive/15 rounded-lg text-sm text-destructive flex items-start gap-2">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -133,7 +144,7 @@ export default function LoginForm() {
           </form>
 
           <div className="mt-6 p-3 bg-primary/5 rounded-lg border border-primary/10">
-            <p className="text-xs font-medium text-primary mb-0.5">Demo Credentials</p>
+            <p className="text-xs font-medium text-primary mb-1">Demo Credentials</p>
             <p className="text-xs text-muted-foreground">
               Username: <span className="font-mono font-bold text-foreground">master</span> &nbsp;|&nbsp; Password: <span className="font-mono font-bold text-foreground">master123</span>
             </p>
