@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function LoginForm() {
-  const { setAdmin } = useCRMStore();
+  const { setAdmin, setTheme } = useCRMStore();
   const { toast } = useToast();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +40,7 @@ export default function LoginForm() {
       }
 
       setAdmin(data);
+      if (data.theme) setTheme(data.theme);
       toast({ title: 'Welcome back!', description: `Logged in as ${data.fullName}` });
     } catch {
       setError('Network error. Please try again.');

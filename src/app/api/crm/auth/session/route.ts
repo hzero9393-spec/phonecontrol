@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     const admin = await db.admin.findUnique({
       where: { id: adminId },
-      select: { id: true, username: true, role: true, fullName: true, mobile: true, email: true },
+      select: { id: true, username: true, role: true, fullName: true, mobile: true, email: true, theme: true },
     });
 
     if (!admin) {

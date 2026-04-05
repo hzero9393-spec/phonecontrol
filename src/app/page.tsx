@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useSyncExternalStore } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { useCRMStore } from '@/store/use-crm-store';
 import Sidebar from '@/components/crm/Sidebar';
 import Header from '@/components/crm/Header';
@@ -21,8 +21,19 @@ import PrintPdfModule from '@/components/crm/PrintPdfModule';
 const emptySubscribe = () => () => {};
 
 export default function CRMPage() {
-  const { admin, currentModule, sidebarOpen } = useCRMStore();
+  const { admin, currentModule, sidebarOpen, theme } = useCRMStore();
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+
+  // Apply theme class to body whenever theme changes
+  useEffect(() => {
+    if (!mounted) return;
+    // Remove any existing theme-xxx classes
+    document.body.className = document.body.className
+      .replace(/theme-\S+/g, '')
+      .trim();
+    // Add current theme
+    document.body.classList.add(theme);
+  }, [theme, mounted]);
 
   if (!mounted) {
     return (

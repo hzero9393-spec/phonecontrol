@@ -416,3 +416,76 @@ Fix and enhance Inventory and Customers modules per spec - 4-section inventory f
 - Customer creation and history API tested (Rahul Sharma created, history returns correctly)
 - All pagination, filters, and CRUD operations working
 - Dev server compiles successfully
+
+---
+## Task ID: 20 - Main Agent
+### Work Task
+Add Theme Customization section to Profile module. 12 selectable themes, each admin picks their own theme, saved per admin in DB, applies site-wide.
+
+### Work Summary
+
+**Database:**
+- `theme` column already existed in Prisma schema (String, default "theme-blue")
+- DB already in sync, Prisma client regenerated
+
+**Zustand Store (`src/store/use-crm-store.ts`):**
+- Added `THEMES` constant array with 12 theme objects (id, name, primary, secondary, bg, accent)
+- Added `ThemeId` type
+- Added `theme` state (default "theme-blue") and `setTheme` action
+- Theme persisted to localStorage via `partialize`
+
+**API Updates:**
+- Login API (`/api/crm/auth/login`): returns `theme` field in response
+- Session API (`/api/crm/auth/session`): returns `theme` field
+- Profile API (`/api/crm/profile`): GET returns `theme`; PUT with `type: 'theme'` saves theme to DB (whitelist of 12 allowed values)
+
+**Theme CSS (globals.css — 240+ lines added):**
+- 12 theme classes on `body.theme-xxx`, each overriding CSS variables:
+  - `--primary`, `--primary-foreground`, `--secondary`, `--secondary-foreground`
+  - `--background`, `--foreground`, `--card`, `--card-foreground`
+  - `--muted`, `--muted-foreground`, `--accent`, `--accent-foreground`
+  - `--ring`, `--border`, `--input`, `--destructive`
+  - `--chart-1` through `--chart-5`
+  - `--sidebar`, `--sidebar-primary`, `--sidebar-accent`, `--sidebar-border`, etc.
+  - Badge colors, header, card-shadow, table-hover, scrollbar tokens
+- `body.theme-dark` includes full dark mode support (dark backgrounds, light text)
+- Theme card styles: `.theme-card` with hover scale, selected border/shadow, color strips, checkmark
+
+**Profile Module (`ProfileModule.tsx` — 5th tab):**
+- Added "Theme" tab with Palette icon
+- 4-column grid (2 on mobile) of 12 theme cards
+- Each card shows 4 horizontal color strips (primary, secondary, accent, bg), theme name, and theme ID
+- Selected card shows checkmark overlay + border highlight
+- Click → instant theme apply via `document.body.classList.add(theme)` + Zustand store update + API save
+- Current theme info panel at bottom with primary/accent hex values
+- Loading indicator during save
+
+**LoginForm (`LoginForm.tsx`):**
+- After login, stores theme from API response: `if (data.theme) setTheme(data.theme)`
+
+**Page Component (`page.tsx`):**
+- `useEffect` applies theme class on `document.body` whenever `theme` state changes
+- Handles theme cleanup (removes old theme-xxx class before adding new one)
+
+**12 Themes:**
+1. theme-blue → Ocean Blue (#2563EB)
+2. theme-dark → Dark Neon (#22C55E, dark bg)
+3. theme-purple → Royal Purple (#7C3AED)
+4. theme-orange → Sunset Orange (#EA580C)
+5. theme-teal → Cool Teal (#0D9488)
+6. theme-rose → Rose Red (#E11D48)
+7. theme-indigo → Deep Indigo (#4338CA)
+8. theme-green → Fresh Green (#16A34A)
+9. theme-slate → Classic Slate (#475569)
+10. theme-amber → Golden Amber (#D97706)
+11. theme-cyan → Sky Cyan (#0891B2)
+12. theme-pink → Hot Pink (#DB2777)
+
+**Verification:**
+- ESLint: zero errors
+- Login API returns theme: `{"theme":"theme-blue"}`
+- Profile API fetches theme successfully
+- Dev server compiles successfully (GET / 200, dashboard 200, profile 200)
+- Theme applies instantly on click without page reload
+- Theme persists across page refreshes via localStorage
+- Theme saved per admin in DB via API

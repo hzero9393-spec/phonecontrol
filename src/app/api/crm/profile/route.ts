@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const admin = await db.admin.findUnique({
       where: { id: adminId },
-      select: { id: true, username: true, role: true, fullName: true, mobile: true, email: true, createdAt: true },
+      select: { id: true, username: true, role: true, fullName: true, mobile: true, email: true, theme: true, createdAt: true },
     });
     if (!admin) return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
 
@@ -107,6 +107,17 @@ export async function PUT(request: NextRequest) {
       await writeFile(filePath, buffer);
 
       return NextResponse.json({ success: true, photoUrl: `/profiles/${adminId}.${ext}` });
+    }
+
+    if (type === 'theme') {
+      const { theme: themeName } = data;
+      const allowed = ['theme-blue','theme-dark','theme-purple','theme-orange','theme-teal',
+        'theme-rose','theme-indigo','theme-green','theme-slate','theme-amber','theme-cyan','theme-pink'];
+      if (!allowed.includes(themeName)) {
+        return NextResponse.json({ error: 'Invalid theme' }, { status: 400 });
+      }
+      await db.admin.update({ where: { id: adminId }, data: { theme: themeName } });
+      return NextResponse.json({ success: true, theme: themeName });
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });

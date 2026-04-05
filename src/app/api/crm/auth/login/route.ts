@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       fullName: admin.fullName,
       mobile: admin.mobile,
       email: admin.email,
+      theme: admin.theme,
     });
   } catch (error) {
     console.error('Login error:', error);
