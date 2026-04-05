@@ -165,3 +165,87 @@ Stage Summary:
 - Total codebase: ~200KB of component code + ~1500 lines of API code
 - All 7 database tables with proper relations
 - Authentication with master admin seeded
+
+---
+## Task ID: 13 - theme-updater
+### Work Task
+Update color theme across InventoryModule.tsx and SalesModule.tsx per the new orange/red CRM color palette. Replace all matching Tailwind CSS color classes with custom hex values.
+
+### Work Summary
+Applied color replacement rules to both CRM module components:
+
+**InventoryModule.tsx** (30+ replacements across 13 class patterns):
+- Slate text: `text-slate-300` → `text-[#BBBBBB]`, `text-slate-400` → `text-[#888888]`, `text-slate-500` → `text-[#555555]`, `text-slate-600/700/800` → `text-[#00092C]`
+- Slate bg/border: `bg-slate-50` → `bg-[#FAFAFA]`, `hover:bg-slate-50` → `hover:bg-[#F0F0F0]`, `border-slate-200` → `border-[#D1D1D1]`
+- Emerald: `text-emerald-600` → `text-[#0FA968]`
+- Red: `text-red-500` → `text-[#B20600]`
+- Blue bg: `bg-blue-100` → `bg-[#FFF5F0]`
+- Amber bg: `bg-amber-100` → `bg-[#FFF8EB]`
+- Color classes not in the replacement rules (e.g., `text-amber-800`, `bg-green-100`, `bg-red-100`, `text-emerald-800`, etc.) were left unchanged.
+
+**SalesModule.tsx** (1 replacement):
+- `bg-amber-100` → `bg-[#FFF8EB]` in PaymentBadge partial status config
+- This file primarily uses shadcn semantic classes (`text-primary`, `text-muted-foreground`, `bg-card`, `bg-muted`) which are CSS-variable-based and not in the replacement rules, so minimal changes were needed.
+
+Verification: ESLint passes with zero errors. All functionality preserved.
+
+---
+## Task ID: 14 - theme-updater
+### Work Task
+Update color theme across CustomersModule.tsx and AdminModule.tsx per the new orange/red CRM color palette. Replace all hardcoded Tailwind CSS color classes (blue, slate, gray, red, purple) and hex codes (#2563EB, #1D4ED8) with custom hex values.
+
+### Work Summary
+Applied comprehensive color replacement rules to both CRM module components:
+
+**CustomersModule.tsx** (24 replacements across 16 class patterns):
+- Primary buttons: `bg-[#2563EB]` → `bg-[#FF5F00]`, `hover:bg-[#1D4ED8]` → `hover:bg-[#CC4D00]`
+- Destructive: `text-red-500` → `text-[#B20600]`, `bg-red-500` → `bg-[#B20600]`, `hover:bg-red-600` → `hover:bg-[#8B0500]`, `hover:bg-red-50` → `hover:bg-[#FFF5F3]`
+- Navy text: `text-slate-600/700/800` → `text-[#00092C]`
+- Muted text: `text-slate-400` → `text-[#888888]`, `text-slate-500` → `text-[#555555]`
+- Backgrounds: `bg-gray-100` → `bg-[#F0F0F0]`, `bg-purple-100` → `bg-[#EEEEF5]`
+- Borders: `border-slate-200` → `border-[#D1D1D1]`, `border-slate-100` → `border-[#EEEEEE]`
+- Hover states: `hover:bg-slate-100` → `hover:bg-[#F0F0F0]`, `hover:bg-blue-50` → `hover:bg-[#FFF5F0]`, `text-blue-600` → `text-[#FF5F00]`
+- Pagination active: `bg-[#2563EB]` → `bg-[#FF5F00]`
+
+**AdminModule.tsx** (30+ replacements across 15 class patterns):
+- Same primary/destructive/navy/muted replacements as CustomersModule
+- Admin role badge: `bg-blue-100 text-blue-800 border-blue-200` → `bg-[#FFF5F0] text-[#00092C] border-[#FFD4BF]`
+- Logged-in indicator: `bg-blue-50` → `bg-[#FFF5F0]`, `text-blue-600` → `text-[#FF5F00]`, `text-blue-800` → `text-[#00092C]`, `border-blue-200` → `border-[#FFD4BF]`
+- Table header: `bg-slate-50/80` → `bg-[#FAFAFA]/80`
+- Table row hover: `hover:bg-slate-50/50` → `hover:bg-[#FAFAFA]/50`
+- Master role amber colors left unchanged (intentional gold accent)
+
+Verification: ESLint passes with zero errors. Dev server compiles cleanly. Zero old Tailwind color class references remain in either file (verified via ripgrep).
+
+---
+## Task ID: 15 - theme-updater
+### Work Task
+Update color theme across InvoicesModule.tsx, OrdersModule.tsx, and ShopSettings.tsx per the new orange/red CRM color palette. Replace all matching Tailwind CSS color classes with custom hex values.
+
+### Work Summary
+Applied color replacement rules to three CRM module components:
+
+**InvoicesModule.tsx** (25+ replacements across 10 class patterns):
+- Gray text: `text-gray-600` → `text-[#00092C]`, `text-gray-700` → `text-[#00092C]`, `text-gray-500` → `text-[#555555]`, `text-gray-400` → `text-[#888888]`
+- Gray bg/border: `bg-gray-50` → `bg-[#F0F0F0]`, `border-gray-200` → `border-[#D1D1D1]`
+- Emerald: `text-emerald-700` → `text-[#0A8A54]` (4 instances: paid amounts, pending when zero)
+- Red: `text-red-600` → `text-[#B20600]` (pending amounts), `text-red-800` → `text-[#8B0500]` (pending badge)
+- Amber: `bg-amber-100` → `bg-[#FFF8EB]` (partial payment badge)
+- `border-gray-300` left unchanged (no rule provided)
+- `bg-emerald-100`, `text-emerald-800`, `border-emerald-200` left unchanged (no rules)
+
+**OrdersModule.tsx** (25+ replacements across 15 class patterns):
+- Primary buttons: `bg-[#2563EB]` → `bg-[#FF5F00]`, `hover:bg-[#1D4ED8]` → `hover:bg-[#CC4D00]` (3 buttons)
+- Status badges: `bg-blue-100` → `bg-[#FFF5F0]`, `text-blue-800` → `text-[#CC4D00]` (processing), `text-red-800` → `text-[#8B0500]` (cancelled)
+- Slate text: `text-slate-800` → `text-[#00092C]`, `text-slate-500` → `text-[#555555]`, `text-slate-400` → `text-[#888888]`, `text-slate-600` → `text-[#00092C]`
+- Slate bg/border: `border-slate-200` → `border-[#D1D1D1]`, `bg-slate-50/80` → `bg-[#FAFAFA]/80`, `hover:bg-slate-50/50` → `hover:bg-[#F0F0F0]/50`, `border-slate-100` → `border-[#EEEEEE]`
+- Hover action: `hover:text-blue-600` → `hover:text-[#FF5F00]`
+- Amber: `bg-amber-100` → `bg-[#FFF8EB]` (pending badge)
+
+**ShopSettings.tsx** (10 replacements across 7 class patterns):
+- Primary icon bg: `bg-[#2563EB]` → `bg-[#FF5F00]`
+- Save button: `bg-[#2563EB] hover:bg-[#1D4ED8]` → `bg-[#FF5F00] hover:bg-[#CC4D00]`
+- Slate text: `text-slate-800` → `text-[#00092C]`, `text-slate-500` → `text-[#555555]`, `text-slate-400` → `text-[#888888]`
+- Slate bg/border: `bg-slate-50` → `bg-[#FAFAFA]`, `border-slate-200` → `border-[#D1D1D1]`
+
+Verification: ESLint passes with zero errors. Dev server compiles successfully. All functionality preserved.

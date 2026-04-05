@@ -94,7 +94,7 @@ const fmt = (n: number) => priceFmt.format(n);
 function PaymentBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
     full: { label: 'Full', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    partial: { label: 'Partial', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+    partial: { label: 'Partial', className: 'bg-[#FFF8EB] text-amber-800 border-amber-200' },
     pending: { label: 'Pending', className: 'bg-red-100 text-red-800 border-red-200' },
   };
   const c = config[status] || config.pending;

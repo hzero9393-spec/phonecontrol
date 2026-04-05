@@ -45,17 +45,17 @@ export default function Sidebar() {
         {/* Logo area */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#3B82F6] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#FF5F00] flex items-center justify-center">
               <Smartphone size={20} className="text-white" />
             </div>
             <div>
               <h1 className="text-base font-bold text-white leading-tight">PhoneCRM</h1>
-              <p className="text-xs text-slate-400">Buy & Sell Shop</p>
+              <p className="text-xs text-[#8892B0]">Buy & Sell Shop</p>
             </div>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden text-slate-400 hover:text-white"
+            className="md:hidden text-[#8892B0] hover:text-white transition-colors"
           >
             <X size={20} />
           </button>
@@ -63,7 +63,7 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="py-4">
-          <p className="px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-widest text-slate-500">
+          <p className="px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-widest text-[#5A6480]">
             Main Menu
           </p>
           {navItems
@@ -83,14 +83,14 @@ export default function Sidebar() {
         {/* Bottom section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center text-white text-sm font-bold">
+            <div className="w-8 h-8 rounded-full bg-[#FF5F00] flex items-center justify-center text-white text-sm font-bold">
               {admin?.fullName?.charAt(0) || 'A'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{admin?.fullName || 'Admin'}</p>
-              <p className="text-xs text-slate-400 capitalize">{admin?.role || ''}</p>
+              <p className="text-xs text-[#8892B0] capitalize">{admin?.role || ''}</p>
             </div>
-            <LogOut size={16} className="text-slate-400 hover:text-red-400 cursor-pointer transition-colors" />
+            <LogOut size={16} className="text-[#8892B0] hover:text-[#FF5F00] cursor-pointer transition-colors" />
           </div>
         </div>
       </aside>

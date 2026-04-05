@@ -94,7 +94,7 @@ export default function ShopSettings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={28} className="animate-spin text-slate-400" />
+        <Loader2 size={28} className="animate-spin text-[#888888]" />
       </div>
     );
   }
@@ -103,19 +103,19 @@ export default function ShopSettings() {
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-slate-800">Shop Settings</h2>
-        <p className="text-sm text-slate-500">Manage your shop details and business information</p>
+        <h2 className="text-xl font-bold text-[#00092C]">Shop Settings</h2>
+        <p className="text-sm text-[#555555]">Manage your shop details and business information</p>
       </div>
 
       {/* Shop Information Card */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#2563EB] flex items-center justify-center">
+      <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
+        <div className="px-6 py-4 bg-[#FAFAFA] border-b border-[#D1D1D1] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#FF5F00] flex items-center justify-center">
             <Store size={18} className="text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-800">Shop Information</h3>
-            <p className="text-xs text-slate-500">Basic details about your shop</p>
+            <h3 className="font-semibold text-[#00092C]">Shop Information</h3>
+            <p className="text-xs text-[#555555]">Basic details about your shop</p>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export default function ShopSettings() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white min-w-[120px]"
+              className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white min-w-[120px]"
             >
               {saving ? (
                 <Loader2 size={16} className="mr-2 animate-spin" />

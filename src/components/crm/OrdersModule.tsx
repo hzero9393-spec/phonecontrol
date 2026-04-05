@@ -60,10 +60,10 @@ interface Order {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800 border-amber-200',
-  processing: 'bg-blue-100 text-blue-800 border-blue-200',
+  pending: 'bg-[#FFF8EB] text-amber-800 border-amber-200',
+  processing: 'bg-[#FFF5F0] text-[#CC4D00] border-[#FFD4BF]',
   completed: 'bg-green-100 text-green-800 border-green-200',
-  cancelled: 'bg-red-100 text-red-800 border-red-200',
+  cancelled: 'bg-red-100 text-[#8B0500] border-red-200',
 };
 
 const statusLabels: Record<string, string> = {
@@ -266,20 +266,20 @@ export default function OrdersModule() {
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Orders</h2>
-          <p className="text-sm text-slate-500">Manage customer orders and track delivery status</p>
+          <h2 className="text-xl font-bold text-[#00092C]">Orders</h2>
+          <p className="text-sm text-[#555555]">Manage customer orders and track delivery status</p>
         </div>
-        <Button onClick={openNewOrder} className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white">
+        <Button onClick={openNewOrder} className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white">
           <Plus size={16} className="mr-2" />
           New Order
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-[#D1D1D1] p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
             <Input
               placeholder="Search by brand, model, customer..."
               className="pl-9"
@@ -303,13 +303,13 @@ export default function OrdersModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={28} className="animate-spin text-slate-400" />
+            <Loader2 size={28} className="animate-spin text-[#888888]" />
           </div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-20 text-[#888888]">
             <ShoppingBag size={40} className="mb-3 opacity-50" />
             <p className="font-medium">No orders found</p>
             <p className="text-sm mt-1">Create a new order to get started</p>
@@ -318,20 +318,20 @@ export default function OrdersModule() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/80">
-                  <TableHead className="font-semibold text-slate-600">Customer</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Brand</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Model</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-right">Advance</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Status</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Order Date</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Delivery Date</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-right">Actions</TableHead>
+                <TableRow className="bg-[#FAFAFA]/80">
+                  <TableHead className="font-semibold text-[#00092C]">Customer</TableHead>
+                  <TableHead className="font-semibold text-[#00092C]">Brand</TableHead>
+                  <TableHead className="font-semibold text-[#00092C]">Model</TableHead>
+                  <TableHead className="font-semibold text-[#00092C] text-right">Advance</TableHead>
+                  <TableHead className="font-semibold text-[#00092C]">Status</TableHead>
+                  <TableHead className="font-semibold text-[#00092C]">Order Date</TableHead>
+                  <TableHead className="font-semibold text-[#00092C]">Delivery Date</TableHead>
+                  <TableHead className="font-semibold text-[#00092C] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id} className="hover:bg-slate-50/50">
+                  <TableRow key={order.id} className="hover:bg-[#F0F0F0]/50">
                     <TableCell className="font-medium">{order.customer?.name || '-'}</TableCell>
                     <TableCell>{order.brand}</TableCell>
                     <TableCell>{order.model || '-'}</TableCell>
@@ -354,7 +354,7 @@ export default function OrdersModule() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(order)}
-                          className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600"
+                          className="h-8 w-8 p-0 text-[#555555] hover:text-[#FF5F00]"
                         >
                           <Edit size={15} />
                         </Button>
@@ -369,8 +369,8 @@ export default function OrdersModule() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-            <p className="text-sm text-slate-500">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[#EEEEEE]">
+            <p className="text-sm text-[#555555]">
               Page {page} of {totalPages}
             </p>
             <div className="flex items-center gap-1">
@@ -510,7 +510,7 @@ export default function OrdersModule() {
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white"
+              className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white"
             >
               {submitting && <Loader2 size={16} className="mr-2 animate-spin" />}
               {editingId ? 'Update Order' : 'Create Order'}
@@ -553,7 +553,7 @@ export default function OrdersModule() {
             <Button
               onClick={handleStatusUpdate}
               disabled={submitting || !newStatus}
-              className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white"
+              className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white"
             >
               {submitting && <Loader2 size={16} className="mr-2 animate-spin" />}
               Update Status

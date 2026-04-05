@@ -151,7 +151,7 @@ export default function CustomersModule() {
     const map: Record<string, string> = {
       seller: 'badge-info',
       buyer: 'badge-success',
-      both: 'bg-purple-100 text-purple-700',
+      both: 'bg-[#EEEEF5] text-[#00092C]',
     };
     return `badge ${map[type] || 'badge-default'}`;
   };
@@ -171,7 +171,7 @@ export default function CustomersModule() {
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative flex-1 w-full sm:max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
           <Input
             placeholder="Search by name or phone..."
             value={search}
@@ -179,22 +179,22 @@ export default function CustomersModule() {
             className="pl-9"
           />
         </div>
-        <Button onClick={openAdd} className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white gap-2 w-full sm:w-auto">
+        <Button onClick={openAdd} className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white gap-2 w-full sm:w-auto">
           <UserPlus size={16} />
           Add Customer
         </Button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
         {loading ? (
           <div className="p-8 space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+              <div key={i} className="h-12 bg-[#F0F0F0] rounded animate-pulse" />
             ))}
           </div>
         ) : customers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-16 text-[#888888]">
             <Users size={40} className="mb-3 opacity-40" />
             <p className="font-medium">No customers found</p>
             <p className="text-sm mt-1">{search ? 'Try a different search term' : 'Click "Add Customer" to create one'}</p>
@@ -219,39 +219,39 @@ export default function CustomersModule() {
                     <tr key={c.id}>
                       <td className="font-medium">{c.name}</td>
                       <td>
-                        <span className="inline-flex items-center gap-1 text-slate-600">
-                          <Phone size={12} className="text-slate-400" />
+                        <span className="inline-flex items-center gap-1 text-[#00092C]">
+                          <Phone size={12} className="text-[#888888]" />
                           {c.phone || '—'}
                         </span>
                       </td>
-                      <td className="hidden md:table-cell max-w-[200px] truncate text-slate-500">
+                      <td className="hidden md:table-cell max-w-[200px] truncate text-[#555555]">
                         <span className="inline-flex items-center gap-1">
-                          <MapPin size={12} className="text-slate-400 flex-shrink-0" />
+                          <MapPin size={12} className="text-[#888888] flex-shrink-0" />
                           {c.address || '—'}
                         </span>
                       </td>
-                      <td className="hidden lg:table-cell text-slate-500">
+                      <td className="hidden lg:table-cell text-[#555555]">
                         <span className="inline-flex items-center gap-1">
-                          <CreditCard size={12} className="text-slate-400" />
+                          <CreditCard size={12} className="text-[#888888]" />
                           {c.aadharNo || '—'}
                         </span>
                       </td>
                       <td><span className={typeBadge(c.type)}>{c.type}</span></td>
-                      <td className="hidden sm:table-cell text-slate-500 text-xs">
+                      <td className="hidden sm:table-cell text-[#555555] text-xs">
                         {new Date(c.createdAt).toLocaleDateString('en-IN')}
                       </td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openEdit(c)}
-                            className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[#FFF5F0] text-[#FF5F00] transition-colors"
                             title="Edit"
                           >
                             <Edit size={15} />
                           </button>
                           <button
                             onClick={() => openDelete(c.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[#FFF5F3] text-[#B20600] transition-colors"
                             title="Delete"
                           >
                             <Trash2 size={15} />
@@ -266,15 +266,15 @@ export default function CustomersModule() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-                <p className="text-xs text-slate-500">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[#EEEEEE]">
+                <p className="text-xs text-[#555555]">
                   Page {page} of {totalPages}
                 </p>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="p-1.5 rounded-lg hover:bg-[#F0F0F0] disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft size={16} />
                   </button>
@@ -284,8 +284,8 @@ export default function CustomersModule() {
                       onClick={() => setPage(p)}
                       className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                         p === page
-                          ? 'bg-[#2563EB] text-white'
-                          : 'hover:bg-slate-100 text-slate-600'
+                          ? 'bg-[#FF5F00] text-white'
+                          : 'hover:bg-[#F0F0F0] text-[#00092C]'
                       }`}
                     >
                       {p}
@@ -294,7 +294,7 @@ export default function CustomersModule() {
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="p-1.5 rounded-lg hover:bg-[#F0F0F0] disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -361,7 +361,7 @@ export default function CustomersModule() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white">
+            <Button onClick={handleSave} disabled={saving} className="bg-[#FF5F00] hover:bg-[#CC4D00] text-white">
               {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -379,7 +379,7 @@ export default function CustomersModule() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">
+            <AlertDialogAction onClick={handleDelete} className="bg-[#B20600] hover:bg-[#8B0500] text-white">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
