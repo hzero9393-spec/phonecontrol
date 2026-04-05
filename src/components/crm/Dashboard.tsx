@@ -1,6 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 import {
   Users,
   Smartphone,
@@ -8,16 +22,34 @@ import {
   IndianRupee,
   ShoppingBag,
   Wrench,
-  ArrowUpRight,
+  TrendingUp,
+  TrendingDown,
+  CircleDollarSign,
+  Clock,
+  Activity,
+  Package,
 } from 'lucide-react';
 import { useCRMStore } from '@/store/use-crm-store';
 
+/* ──────────────────────────── Types ──────────────────────────── */
 interface DashboardStats {
   totalCustomers: number;
+  customersByType: Record<string, number>;
+  totalInventory: number;
   inventoryByStatus: Record<string, number>;
+  inventoryByCondition: Record<string, number>;
+  topBrands: Array<{ name: string; count: number }>;
   totalSales: number;
   totalRevenue: number;
+  totalPaid: number;
+  totalPending: number;
+  salesByPayment: Record<string, number>;
+  monthlyRevenue: Array<{ month: string; revenue: number }>;
+  monthlySalesCount: Array<{ month: string; count: number }>;
+  totalProfit: number;
+  avgProfitPerSale: number;
   ordersByStatus: Record<string, number>;
+  totalOrders: number;
   recentSales: Array<{
     id: string;
     salePrice: number;
@@ -38,30 +70,105 @@ interface DashboardStats {
     addedAt: string;
     seller: { fullName: string } | null;
   }>;
-  repairNeeded: number;
+  repairNeededCount: number;
+  repairCompletedCount: number;
+  todaySales: number;
+  todayRevenue: number;
 }
 
+/* ──────────────────────────── Helpers ──────────────────────────── */
 const formatINR = (amount: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
-const statCards = [
-  { key: 'totalCustomers', label: 'Total Customers', icon: Users, bg: 'bg-[#FFF5F0]', iconColor: 'text-[#FF5F00]', valueColor: 'text-[#CC4D00]' },
-  { key: 'inventoryTotal', label: 'Total Inventory', icon: Smartphone, bg: 'bg-[#EEEEF5]', iconColor: 'text-[#00092C]', valueColor: 'text-[#00092C]' },
-  { key: 'totalSales', label: 'Total Sales', icon: Receipt, bg: 'bg-[#ECFDF5]', iconColor: 'text-[#0FA968]', valueColor: 'text-[#0A8A54]' },
-  { key: 'totalRevenue', label: 'Total Revenue', icon: IndianRupee, bg: 'bg-[#F0FFF5]', iconColor: 'text-[#0FA968]', valueColor: 'text-[#0A8A54]' },
-  { key: 'pendingOrders', label: 'Pending Orders', icon: ShoppingBag, bg: 'bg-[#FFF8EB]', iconColor: 'text-[#E8960C]', valueColor: 'text-[#C47D08]' },
-  { key: 'repairNeeded', label: 'Repair Needed', icon: Wrench, bg: 'bg-[#FFF5F3]', iconColor: 'text-[#B20600]', valueColor: 'text-[#8B0500]' },
-];
+const formatCompact = (amount: number) => {
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
+  return `₹${amount}`;
+};
 
+/* ──────────────────────────── Color Palette ──────────────────────────── */
+const COLORS = {
+  orange: '#FF5F00',
+  darkOrange: '#CC4D00',
+  navy: '#00092C',
+  darkRed: '#B20600',
+  green: '#0FA968',
+  darkGreen: '#0A8A54',
+  amber: '#E8960C',
+  darkAmber: '#C47D08',
+  lightGray: '#EEEEEE',
+  border: '#D1D1D1',
+  muted: '#555555',
+  lightMuted: '#888888',
+};
+
+const PIE_COLORS = [COLORS.orange, COLORS.navy, COLORS.green, COLORS.darkRed, COLORS.amber, COLORS.darkOrange];
+const PIE_COLORS_ALT = [COLORS.green, COLORS.orange, COLORS.darkRed];
+
+/* ──────────────────────────── Animation Variants ──────────────────────────── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+  }),
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+};
+
+/* ──────────────────────────── Custom Tooltip ──────────────────────────── */
+function ChartTooltip({ active, payload, label, isCurrency }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string; isCurrency?: boolean }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white rounded-lg shadow-xl border border-[#D1D1D1] px-4 py-3 text-sm">
+      <p className="font-semibold text-[#00092C] mb-1">{label}</p>
+      {payload.map((p, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+          <span className="text-[#555555]">{p.name}: </span>
+          <span className="font-semibold text-[#00092C]">{isCurrency ? formatINR(p.value) : p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ──────────────────────────── Pie Label ──────────────────────────── */
+function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number }) {
+  if (percent < 0.05) return null;
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 1.6;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs fill-[#555555] font-medium">
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+}
+
+/* ──────────────────────────── Empty Chart State ──────────────────────────── */
+function EmptyChart({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-[#888888]">
+      <Activity size={32} className="mb-2 opacity-30" />
+      <p className="text-sm">{message}</p>
+    </div>
+  );
+}
+
+/* ──────────────────────────── Main Component ──────────────────────────── */
 export default function Dashboard() {
   const { admin } = useCRMStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  useEffect(() => { fetchStats(); }, []);
 
   const fetchStats = async () => {
     try {
@@ -77,74 +184,57 @@ export default function Dashboard() {
     }
   };
 
-  const getStatValue = (key: string) => {
-    if (!stats) return 0;
-    switch (key) {
-      case 'totalCustomers':
-        return stats.totalCustomers;
-      case 'inventoryTotal':
-        return Object.values(stats.inventoryByStatus).reduce((a, b) => a + b, 0);
-      case 'totalSales':
-        return stats.totalSales;
-      case 'totalRevenue':
-        return formatINR(stats.totalRevenue);
-      case 'pendingOrders':
-        return stats.ordersByStatus['pending'] || 0;
-      case 'repairNeeded':
-        return stats.repairNeeded;
-      default:
-        return 0;
-    }
+  /* ─── Chart Data Prep ─── */
+  const conditionPieData = stats
+    ? Object.entries(stats.inventoryByCondition)
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }))
+    : [];
+
+  const paymentPieData = stats
+    ? Object.entries(stats.salesByPayment)
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }))
+    : [];
+
+  const customerTypeData = stats
+    ? Object.entries(stats.customersByType)
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }))
+    : [];
+
+  const hasData = conditionPieData.length > 0 || paymentPieData.length > 0 || stats?.monthlyRevenue.some(m => m.revenue > 0) || false;
+
+  /* ─── Badges ─── */
+  const statusBadge = (s: string) => {
+    const m: Record<string, string> = { pending: 'badge-warning', complete: 'badge-success', done: 'badge-info', full: 'badge-success', partial: 'badge-warning', cancelled: 'badge-danger' };
+    return `badge ${m[s] || 'badge-default'}`;
+  };
+  const conditionBadge = (c: string) => {
+    const m: Record<string, string> = { good: 'badge-success', average: 'badge-warning', poor: 'badge-danger' };
+    return `badge ${m[c] || 'badge-default'}`;
   };
 
-  const statusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      pending: 'badge-warning',
-      complete: 'badge-success',
-      done: 'badge-info',
-      full: 'badge-success',
-      partial: 'badge-warning',
-      cancelled: 'badge-danger',
-    };
-    return `badge ${map[status] || 'badge-default'}`;
-  };
-
-  const conditionBadge = (condition: string) => {
-    const map: Record<string, string> = {
-      good: 'badge-success',
-      average: 'badge-warning',
-      poor: 'badge-danger',
-    };
-    return `badge ${map[condition] || 'badge-default'}`;
-  };
-
+  /* ─────────── Loading State ─────────── */
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-[88px] rounded-xl bg-[#DCDCDC] animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="stat-card animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#DCDCDC]" />
-                <div className="space-y-2 flex-1">
-                  <div className="h-3 bg-[#DCDCDC] rounded w-24" />
-                  <div className="h-6 bg-[#DCDCDC] rounded w-16" />
-                </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-[#D1D1D1] p-5 animate-pulse">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#DCDCDC]" />
+                <div className="w-16 h-4 bg-[#DCDCDC] rounded" />
               </div>
+              <div className="h-7 bg-[#DCDCDC] rounded w-20 mb-1" />
+              <div className="h-3 bg-[#DCDCDC] rounded w-28" />
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[1, 2].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-[#D1D1D1] p-6 animate-pulse">
-              <div className="h-5 bg-[#DCDCDC] rounded w-32 mb-4" />
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, j) => (
-                  <div key={j} className="h-10 bg-[#F0F0F0] rounded" />
-                ))}
-              </div>
-            </div>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-[#D1D1D1] p-6 animate-pulse h-[320px]" />
           ))}
         </div>
       </div>
@@ -155,81 +245,331 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-[#B20600] mb-3">{error}</p>
-        <button onClick={fetchStats} className="px-4 py-2 bg-[#FF5F00] text-white rounded-lg text-sm hover:bg-[#CC4D00] transition-colors">
-          Retry
-        </button>
+        <button onClick={fetchStats} className="px-4 py-2 bg-[#FF5F00] text-white rounded-lg text-sm hover:bg-[#CC4D00] transition-colors">Retry</button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#00092C] to-[#0A1A4A] rounded-xl p-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF5F00]/10 rounded-full -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-1/2 w-32 h-32 bg-[#FF5F00]/5 rounded-full translate-y-1/2" />
-        <div className="relative">
-          <h2 className="text-xl font-bold">Welcome back, {admin?.fullName || 'Admin'}!</h2>
-          <p className="text-[#8892B0] text-sm mt-1">Here&apos;s what&apos;s happening at your shop today.</p>
-        </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {statCards.map((card) => {
-          const Icon = card.icon;
-          const value = getStatValue(card.key);
-          return (
-            <div key={card.key} className="stat-card cursor-pointer group">
-              <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 rounded-xl ${card.bg} flex items-center justify-center`}>
-                  <Icon size={20} className={card.iconColor} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[#555555] font-medium truncate">{card.label}</p>
-                  <p className={`text-xl font-bold ${card.valueColor}`}>{value}</p>
-                </div>
-                <ArrowUpRight size={16} className="text-[#BBBBBB] group-hover:text-[#555555] transition-colors" />
-              </div>
+      {/* ═══════ Welcome Banner ═══════ */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-[#00092C] via-[#0A1040] to-[#0A1A4A] rounded-xl p-6 text-white relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-72 h-72 bg-[#FF5F00]/10 rounded-full -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-[#FF5F00]/5 rounded-full translate-y-1/2" />
+        <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-[#B20600]/10 rounded-full" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold">Welcome back, {admin?.fullName || 'Admin'}!</h2>
+            <p className="text-[#8892B0] text-sm mt-1">Here&apos;s your shop performance at a glance.</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2.5 border border-white/10">
+              <p className="text-[0.65rem] text-[#8892B0] uppercase tracking-wider">Today&apos;s Sales</p>
+              <p className="text-lg font-bold text-white">{stats.todaySales}</p>
             </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2.5 border border-white/10">
+              <p className="text-[0.65rem] text-[#8892B0] uppercase tracking-wider">Today&apos;s Revenue</p>
+              <p className="text-lg font-bold text-[#0FA968]">{formatINR(stats.todayRevenue)}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ═══════ Stat Cards ═══════ */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Customers', value: stats.totalCustomers, icon: Users, bg: '#FFF5F0', iconColor: '#FF5F00', sub: `${stats.customersByType.seller} sellers · ${stats.customersByType.buyer} buyers` },
+          { label: 'Total Inventory', value: stats.totalInventory, icon: Smartphone, bg: '#EEEEF5', iconColor: '#00092C', sub: `${stats.inventoryByStatus.pending} pending · ${stats.inventoryByStatus.done} sold` },
+          { label: 'Total Revenue', value: formatINR(stats.totalRevenue), icon: IndianRupee, bg: '#ECFDF5', iconColor: '#0FA968', sub: `₹${formatCompact(stats.totalPaid)} received`, trend: 'up' },
+          { label: 'Total Sales', value: stats.totalSales, icon: Receipt, bg: '#F0FFF5', iconColor: '#0FA968', sub: `₹${formatCompact(stats.avgProfitPerSale)} avg profit`, trend: 'up' },
+          { label: 'Pending Amount', value: formatINR(stats.totalPending), icon: CircleDollarSign, bg: '#FFF8EB', iconColor: '#E8960C', sub: `${stats.salesByPayment.pending} unpaid invoices`, trend: stats.totalPending > 0 ? 'down' : undefined },
+          { label: 'Total Profit', value: formatINR(stats.totalProfit), icon: TrendingUp, bg: stats.totalProfit >= 0 ? '#ECFDF5' : '#FFF5F3', iconColor: stats.totalProfit >= 0 ? '#0FA968' : '#B20600', sub: `${((stats.totalProfit / Math.max(stats.totalRevenue, 1)) * 100).toFixed(1)}% margin`, trend: stats.totalProfit >= 0 ? 'up' : 'down' },
+          { label: 'Pending Orders', value: stats.totalOrders > 0 ? stats.ordersByStatus.pending : 0, icon: ShoppingBag, bg: '#FFF8EB', iconColor: '#E8960C', sub: `${stats.ordersByStatus.processing} processing · ${stats.ordersByStatus.completed} done` },
+          { label: 'Repairs', value: stats.repairNeededCount, icon: Wrench, bg: '#FFF5F3', iconColor: '#B20600', sub: `${stats.repairCompletedCount} completed`, trend: stats.repairNeededCount > 0 ? 'down' : undefined },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <motion.div
+              key={card.label}
+              custom={i}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="bg-white rounded-xl border border-[#D1D1D1] p-5 hover:shadow-lg hover:shadow-black/[0.04] transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: card.bg }}>
+                  <Icon size={20} style={{ color: card.iconColor }} />
+                </div>
+                {card.trend && (
+                  <div className={`flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md ${card.trend === 'up' ? 'bg-[#ECFDF5] text-[#0FA968]' : 'bg-[#FFF5F3] text-[#B20600]'}`}>
+                    {card.trend === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-[#555555] font-medium mb-0.5">{card.label}</p>
+              <p className="text-2xl font-bold text-[#00092C] leading-tight">{card.value}</p>
+              <p className="text-[0.7rem] text-[#888888] mt-1">{card.sub}</p>
+            </motion.div>
           );
         })}
       </div>
 
-      {/* Inventory + Orders Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-[#D1D1D1] p-5">
-          <h3 className="text-sm font-semibold text-[#00092C] mb-3">Inventory Status</h3>
-          <div className="flex gap-4 flex-wrap">
-            {Object.entries(stats.inventoryByStatus).map(([status, count]) => (
-              <div key={status} className="flex items-center gap-2">
-                <span className={`w-3 h-3 rounded-full ${status === 'pending' ? 'bg-[#E8960C]' : status === 'complete' ? 'bg-[#0FA968]' : 'bg-[#00092C]'}`} />
-                <span className="text-sm text-[#555555] capitalize">{status}:</span>
-                <span className="text-sm font-bold text-[#00092C]">{count}</span>
+      {/* ═══════ Charts Row 1: Pie Charts ═══════ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Inventory by Condition - Pie */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Inventory Condition</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Distribution by physical state</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#EEEEF5] flex items-center justify-center">
+              <Smartphone size={16} className="text-[#00092C]" />
+            </div>
+          </div>
+          {conditionPieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={conditionPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" labelLine={false} label={PieLabel} stroke="none">
+                  {conditionPieData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS_ALT[i % PIE_COLORS_ALT.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message="No inventory data yet" />
+          )}
+          <div className="flex justify-center gap-4 mt-2">
+            {conditionPieData.map((d, i) => (
+              <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS_ALT[i % PIE_COLORS_ALT.length] }} />
+                <span className="text-[#555555]">{d.name}</span>
+                <span className="font-bold text-[#00092C]">{d.value}</span>
               </div>
             ))}
           </div>
-        </div>
-        <div className="bg-white rounded-xl border border-[#D1D1D1] p-5">
-          <h3 className="text-sm font-semibold text-[#00092C] mb-3">Order Status</h3>
-          <div className="flex gap-4 flex-wrap">
-            {Object.entries(stats.ordersByStatus).map(([status, count]) => (
-              <div key={status} className="flex items-center gap-2">
-                <span className={`w-3 h-3 rounded-full ${status === 'pending' ? 'bg-[#E8960C]' : status === 'processing' ? 'bg-[#FF5F00]' : status === 'completed' ? 'bg-[#0FA968]' : 'bg-[#B20600]'}`} />
-                <span className="text-sm text-[#555555] capitalize">{status}:</span>
-                <span className="text-sm font-bold text-[#00092C]">{count}</span>
+        </motion.div>
+
+        {/* Payment Status - Pie */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.1 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Payment Status</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Sales by payment completion</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] flex items-center justify-center">
+              <CircleDollarSign size={16} className="text-[#0FA968]" />
+            </div>
+          </div>
+          {paymentPieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={paymentPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" labelLine={false} label={PieLabel} stroke="none">
+                  {paymentPieData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message="No sales data yet" />
+          )}
+          <div className="flex justify-center gap-4 mt-2">
+            {paymentPieData.map((d, i) => (
+              <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                <span className="text-[#555555]">{d.name}</span>
+                <span className="font-bold text-[#00092C]">{d.value}</span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
+
+        {/* Customer Type - Pie */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Customer Types</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Seller vs Buyer breakdown</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#FFF5F0] flex items-center justify-center">
+              <Users size={16} className="text-[#FF5F00]" />
+            </div>
+          </div>
+          {customerTypeData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={customerTypeData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" labelLine={false} label={PieLabel} stroke="none">
+                  {customerTypeData.map((_, i) => (
+                    <Cell key={i} fill={[COLORS.orange, COLORS.green, COLORS.navy][i % 3]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message="No customer data yet" />
+          )}
+          <div className="flex justify-center gap-4 mt-2">
+            {customerTypeData.map((d, i) => (
+              <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: [COLORS.orange, COLORS.green, COLORS.navy][i % 3] }} />
+                <span className="text-[#555555]">{d.name}</span>
+                <span className="font-bold text-[#00092C]">{d.value}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
 
-      {/* Tables */}
+      {/* ═══════ Charts Row 2: Bar Charts ═══════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Revenue - Histogram */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.25 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Monthly Revenue</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Last 6 months performance</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] flex items-center justify-center">
+              <IndianRupee size={16} className="text-[#0FA968]" />
+            </div>
+          </div>
+          {stats.monthlyRevenue.some(m => m.revenue > 0) ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={stats.monthlyRevenue} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#EEEEEE" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: '#555555', fontSize: 12 }} axisLine={{ stroke: '#D1D1D1' }} tickLine={false} />
+                <YAxis tick={{ fill: '#555555', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatCompact(v)} />
+                <Tooltip content={<ChartTooltip isCurrency />} />
+                <Bar dataKey="revenue" fill={COLORS.orange} radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message="No revenue data in the last 6 months" />
+          )}
+        </motion.div>
+
+        {/* Monthly Sales Count - Histogram */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.3 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Monthly Sales Volume</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Units sold per month</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#EEEEF5] flex items-center justify-center">
+              <Receipt size={16} className="text-[#00092C]" />
+            </div>
+          </div>
+          {stats.monthlySalesCount.some(m => m.count > 0) ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={stats.monthlySalesCount} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#EEEEEE" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: '#555555', fontSize: 12 }} axisLine={{ stroke: '#D1D1D1' }} tickLine={false} />
+                <YAxis tick={{ fill: '#555555', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="count" fill={COLORS.navy} radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message="No sales in the last 6 months" />
+          )}
+        </motion.div>
+      </div>
+
+      {/* ═══════ Charts Row 3: Top Brands + Order Status ═══════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Top Brands - Horizontal Bar */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.35 }} className="lg:col-span-2 bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Top Brands</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Most stocked phone brands</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#FFF5F0] flex items-center justify-center">
+              <Package size={16} className="text-[#FF5F00]" />
+            </div>
+          </div>
+          {stats.topBrands.length > 0 ? (
+            <ResponsiveContainer width="100%" height={Math.max(stats.topBrands.length * 50, 200)}>
+              <BarChart data={stats.topBrands} layout="vertical" barCategoryGap="15%" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EEEEEE" horizontal={false} />
+                <XAxis type="number" tick={{ fill: '#555555', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#00092C', fontSize: 13, fontWeight: 500 }} axisLine={false} tickLine={false} width={80} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                  {stats.topBrands.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} fillOpacity={0.85} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message="No inventory brands yet" />
+          )}
+        </motion.div>
+
+        {/* Order Status - Donut */}
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.4 }} className="bg-white rounded-xl border border-[#D1D1D1] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-[#00092C] text-sm">Order Status</h3>
+              <p className="text-xs text-[#888888] mt-0.5">{stats.totalOrders} total orders</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#FFF8EB] flex items-center justify-center">
+              <ShoppingBag size={16} className="text-[#E8960C]" />
+            </div>
+          </div>
+          {(() => {
+            const orderData = Object.entries(stats.ordersByStatus)
+              .filter(([, v]) => v > 0)
+              .map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }));
+            const orderColors = ['#E8960C', '#FF5F00', '#0FA968', '#B20600'];
+            if (orderData.length === 0) return <EmptyChart message="No orders yet" />;
+            return (
+              <>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={orderData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value" stroke="none">
+                      {orderData.map((_, i) => (
+                        <Cell key={i} fill={orderColors[i % orderColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<ChartTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-1">
+                  {orderData.map((d, i) => (
+                    <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: orderColors[i % orderColors.length] }} />
+                      <span className="text-[#555555]">{d.name}</span>
+                      <span className="font-bold text-[#00092C]">{d.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+        </motion.div>
+      </div>
+
+      {/* ═══════ Recent Tables ═══════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Sales */}
-        <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.45 }} className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#EEEEEE] flex items-center justify-between">
-            <h3 className="font-semibold text-[#00092C]">Recent Sales</h3>
+            <div>
+              <h3 className="font-semibold text-[#00092C]">Recent Sales</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Last 5 transactions</p>
+            </div>
             <Receipt size={18} className="text-[#BBBBBB]" />
           </div>
           {stats.recentSales.length === 0 ? (
@@ -237,15 +577,7 @@ export default function Dashboard() {
           ) : (
             <div className="overflow-x-auto">
               <table className="crm-table">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Phone</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Customer</th><th>Phone</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
                 <tbody>
                   {stats.recentSales.map((sale) => (
                     <tr key={sale.id}>
@@ -253,19 +585,22 @@ export default function Dashboard() {
                       <td>{sale.inventory ? `${sale.inventory.brand} ${sale.inventory.model}` : '—'}</td>
                       <td className="font-semibold">{formatINR(sale.salePrice)}</td>
                       <td><span className={statusBadge(sale.paymentStatus)}>{sale.paymentStatus}</span></td>
-                      <td className="text-[#555555] text-xs">{new Date(sale.saleDate).toLocaleDateString('en-IN')}</td>
+                      <td className="text-[#555555] text-xs flex items-center gap-1"><Clock size={10} />{new Date(sale.saleDate).toLocaleDateString('en-IN')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Recent Inventory */}
-        <div className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
+        <motion.div variants={scaleIn} initial="hidden" animate="visible" transition={{ delay: 0.5 }} className="bg-white rounded-xl border border-[#D1D1D1] overflow-hidden">
           <div className="px-5 py-4 border-b border-[#EEEEEE] flex items-center justify-between">
-            <h3 className="font-semibold text-[#00092C]">Recent Inventory</h3>
+            <div>
+              <h3 className="font-semibold text-[#00092C]">Recent Inventory</h3>
+              <p className="text-xs text-[#888888] mt-0.5">Latest phone additions</p>
+            </div>
             <Smartphone size={18} className="text-[#BBBBBB]" />
           </div>
           {stats.recentInventory.length === 0 ? (
@@ -273,15 +608,7 @@ export default function Dashboard() {
           ) : (
             <div className="overflow-x-auto">
               <table className="crm-table">
-                <thead>
-                  <tr>
-                    <th>Phone</th>
-                    <th>Condition</th>
-                    <th>Buy Price</th>
-                    <th>Status</th>
-                    <th>Repair</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Phone</th><th>Condition</th><th>Buy Price</th><th>Status</th><th>Repair</th></tr></thead>
                 <tbody>
                   {stats.recentInventory.map((item) => (
                     <tr key={item.id}>
@@ -306,7 +633,7 @@ export default function Dashboard() {
               </table>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );
