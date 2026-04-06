@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: phonecrm
+    runtime: docker
+    repo: https://github.com/hzero9393-spec/phonecrm
+    region: singapore
+    plan: free
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: HOSTNAME
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        value: file:/app/data/crm.db

@@ -1,0 +1,15 @@
+name: phonecrm
+services:
+  - name: phonecrm
+    ports:
+      - port: 3000
+        protocol: http
+    routes:
+      - path: /
+    build:
+      type: docker
+    instances:
+      - regions:
+          - sin
+        size: nano
+    deployment_strategy: rolling
