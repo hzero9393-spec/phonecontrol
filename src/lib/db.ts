@@ -1,28 +1,24 @@
-import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client'
+import { createClient } from '@libsql/client';
 
-function createPrismaClient() {
-  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+let _client: ReturnType<typeof createClient> | null = null;
 
-  // If Turso cloud URL (libsql://), use adapter
-  if (dbUrl.startsWith('libsql://') || dbUrl.startsWith('https://')) {
-    const libsql = createClient({
+export function getDb() {
+  if (!_client) {
+    const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db';
+    _client = createClient({
       url: dbUrl,
       authToken: process.env.DATABASE_AUTH_TOKEN || '',
-    })
-    const adapter = new PrismaLibSql(libsql)
-    return new PrismaClient({ adapter })
+    });
   }
-
-  // Local SQLite
-  return new PrismaClient()
+  return _client;
 }
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+/** Convert SQLite boolean (0/1) to JS boolean */
+export function toBool(val: unknown): boolean {
+  return val === 1 || val === true;
 }
 
-export const db = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+/** Convert JS boolean to SQLite integer (0/1) */
+export function fromBool(val: boolean | undefined | null): number {
+  return val ? 1 : 0;
+}

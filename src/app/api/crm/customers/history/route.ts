@@ -1,8 +1,9 @@
-import { db } from '@/lib/db';
+import { getDb, toBool } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/crm/customers/history?id=xxx
-// Returns: phones sold to shop, phones bought from shop, pending payments
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,38 +13,71 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Customer id is required' }, { status: 400 });
     }
 
-    const customer = await db.customer.findUnique({ where: { id } });
-    if (!customer) {
+    const db = getDb();
+
+    const customerResult = await db.execute({
+      sql: 'SELECT id, name, phone, type FROM Customer WHERE id = ?',
+      args: [id],
+    });
+    if (customerResult.rows.length === 0) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
+    const customer = customerResult.rows[0];
 
     // Phones they sold to shop (from inventory via sellerId)
-    const soldToShop = await db.inventory.findMany({
-      where: { sellerId: id },
-      include: {
-        sales: {
-          select: { id: true, salePrice: true, saleDate: true },
-        },
-      },
-      orderBy: { addedAt: 'desc' },
+    const soldToShopResult = await db.execute({
+      sql: `SELECT i.*, s.id as saleId, s.salePrice as salePrice, s.saleDate as saleDate
+            FROM Inventory i
+            LEFT JOIN Sale s ON s.inventoryId = i.id
+            WHERE i.sellerId = ?
+            ORDER BY i.addedAt DESC`,
+      args: [id],
     });
 
-    const totalSoldToShop = soldToShop.reduce((sum, item) => sum + item.buyPrice, 0);
+    const soldToShop = soldToShopResult.rows.map((row: any) => ({
+      id: row.id,
+      brand: row.brand,
+      model: row.model,
+      imeiNo: row.imeiNo,
+      condition: row.condition,
+      buyPrice: row.buyPrice,
+      status: row.status,
+      addedAt: String(row.addedAt).split('T')[0],
+      soldToCustomer: row.saleId ? {
+        salePrice: row.salePrice,
+        saleDate: String(row.saleDate).split('T')[0],
+      } : null,
+    }));
+
+    const totalSoldToShop = soldToShop.reduce((sum: number, item: any) => sum + item.buyPrice, 0);
 
     // Phones they bought from shop (from sales via buyerId)
-    const boughtFromShop = await db.sale.findMany({
-      where: { buyerId: id },
-      include: {
-        inventory: {
-          select: { brand: true, model: true, imeiNo: true, condition: true },
-        },
-      },
-      orderBy: { saleDate: 'desc' },
+    const boughtFromShopResult = await db.execute({
+      sql: `SELECT s.*, i.brand, i.model, i.imeiNo, i."condition"
+            FROM Sale s
+            JOIN Inventory i ON i.id = s.inventoryId
+            WHERE s.buyerId = ?
+            ORDER BY s.saleDate DESC`,
+      args: [id],
     });
 
-    const totalBought = boughtFromShop.reduce((sum, s) => sum + s.salePrice, 0);
-    const totalPaid = boughtFromShop.reduce((sum, s) => sum + s.paidAmount, 0);
-    const totalPending = boughtFromShop.reduce((sum, s) => sum + s.pendingAmount, 0);
+    const boughtFromShop = boughtFromShopResult.rows.map((row: any) => ({
+      id: row.id,
+      brand: row.brand,
+      model: row.model,
+      imeiNo: row.imeiNo,
+      condition: row.condition,
+      salePrice: row.salePrice,
+      paidAmount: row.paidAmount,
+      pendingAmount: row.pendingAmount,
+      paymentStatus: row.paymentStatus,
+      saleDate: String(row.saleDate).split('T')[0],
+      warrantyMonths: row.warrantyMonths,
+    }));
+
+    const totalBought = boughtFromShop.reduce((sum: number, s: any) => sum + s.salePrice, 0);
+    const totalPaid = boughtFromShop.reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+    const totalPending = boughtFromShop.reduce((sum: number, s: any) => sum + s.pendingAmount, 0);
 
     return NextResponse.json({
       customer: {
@@ -52,34 +86,9 @@ export async function GET(request: NextRequest) {
         phone: customer.phone,
         type: customer.type,
       },
-      soldToShop: soldToShop.map((item) => ({
-        id: item.id,
-        brand: item.brand,
-        model: item.model,
-        imeiNo: item.imeiNo,
-        condition: item.condition,
-        buyPrice: item.buyPrice,
-        status: item.status,
-        addedAt: item.addedAt.toISOString().split('T')[0],
-        soldToCustomer: item.sales.length > 0 ? {
-          salePrice: item.sales[0].salePrice,
-          saleDate: item.sales[0].saleDate.toISOString().split('T')[0],
-        } : null,
-      })),
+      soldToShop,
       totalSoldToShop,
-      boughtFromShop: boughtFromShop.map((sale) => ({
-        id: sale.id,
-        brand: sale.inventory.brand,
-        model: sale.inventory.model,
-        imeiNo: sale.inventory.imeiNo,
-        condition: sale.inventory.condition,
-        salePrice: sale.salePrice,
-        paidAmount: sale.paidAmount,
-        pendingAmount: sale.pendingAmount,
-        paymentStatus: sale.paymentStatus,
-        saleDate: sale.saleDate.toISOString().split('T')[0],
-        warrantyMonths: sale.warrantyMonths,
-      })),
+      boughtFromShop,
       totalBought,
       totalPaid,
       totalPending,

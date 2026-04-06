@@ -1,177 +1,243 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getDb, toBool } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const db = getDb();
+
     // ---- 1. Total customers ----
-    const totalCustomers = await db.customer.count();
+    const totalCustomersResult = await db.execute('SELECT COUNT(*) as count FROM Customer');
+    const totalCustomers = Number(totalCustomersResult.rows[0].count);
 
     // ---- 2. Customer type distribution ----
-    const customersByType = await db.customer.groupBy({
-      by: ['type'],
-      _count: { id: true },
-    });
+    const customerTypeResult = await db.execute(
+      `SELECT type, COUNT(*) as count FROM Customer GROUP BY type`
+    );
     const customerTypeMap: Record<string, number> = { seller: 0, buyer: 0, both: 0 };
-    for (const c of customersByType) customerTypeMap[c.type] = c._count.id;
+    for (const row of customerTypeResult.rows) {
+      customerTypeMap[(row as any).type] = Number((row as any).count);
+    }
 
     // ---- 3. Inventory stats ----
-    const inventoryByStatus = await db.inventory.groupBy({ by: ['status'], _count: { id: true } });
+    const inventoryStatusResult = await db.execute(
+      `SELECT status, COUNT(*) as count FROM Inventory GROUP BY status`
+    );
     const inventoryStatusMap: Record<string, number> = { pending: 0, complete: 0, done: 0 };
-    for (const item of inventoryByStatus) inventoryStatusMap[item.status] = item._count.id;
+    for (const row of inventoryStatusResult.rows) {
+      inventoryStatusMap[(row as any).status] = Number((row as any).count);
+    }
 
-    const inventoryByCondition = await db.inventory.groupBy({ by: ['condition'], _count: { id: true } });
+    const inventoryConditionResult = await db.execute(
+      `SELECT "condition", COUNT(*) as count FROM Inventory GROUP BY "condition"`
+    );
     const inventoryConditionMap: Record<string, number> = { good: 0, average: 0, poor: 0 };
-    for (const item of inventoryByCondition) inventoryConditionMap[item.condition] = item._count.id;
+    for (const row of inventoryConditionResult.rows) {
+      inventoryConditionMap[(row as any).condition] = Number((row as any).count);
+    }
 
     const totalInventory = Object.values(inventoryStatusMap).reduce((s, c) => s + c, 0);
 
     // ---- 4. Top brands ----
-    const topBrandsRaw = await db.inventory.groupBy({
-      by: ['brand'],
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 6,
-    });
-    const topBrands = topBrandsRaw.map((b) => ({ name: b.brand, count: b._count.id }));
+    const topBrandsResult = await db.execute(
+      `SELECT brand, COUNT(*) as count FROM Inventory GROUP BY brand ORDER BY count DESC LIMIT 6`
+    );
+    const topBrands = topBrandsResult.rows.map((b: any) => ({ name: b.brand, count: Number(b.count) }));
 
     // ---- 5. Sales stats ----
-    const totalSales = await db.sale.count();
-    const revenueResult = await db.sale.aggregate({ _sum: { salePrice: true } });
-    const totalRevenue = revenueResult._sum.salePrice ?? 0;
+    const totalSalesResult = await db.execute('SELECT COUNT(*) as count FROM Sale');
+    const totalSales = Number(totalSalesResult.rows[0].count);
 
-    const paidResult = await db.sale.aggregate({ _sum: { paidAmount: true } });
-    const totalPaid = paidResult._sum.paidAmount ?? 0;
+    const revenueResult = await db.execute('SELECT COALESCE(SUM(salePrice), 0) as total FROM Sale');
+    const totalRevenue = Number(revenueResult.rows[0].total);
+
+    const paidResult = await db.execute('SELECT COALESCE(SUM(paidAmount), 0) as total FROM Sale');
+    const totalPaid = Number(paidResult.rows[0].total);
     const totalPending = totalRevenue - totalPaid;
 
     // ---- 6. Payment status distribution ----
-    const salesByPayment = await db.sale.groupBy({ by: ['paymentStatus'], _count: { id: true } });
+    const paymentStatusResult = await db.execute(
+      `SELECT paymentStatus, COUNT(*) as count FROM Sale GROUP BY paymentStatus`
+    );
     const paymentStatusMap: Record<string, number> = { full: 0, partial: 0, pending: 0 };
-    for (const s of salesByPayment) paymentStatusMap[s.paymentStatus] = s._count.id;
+    for (const row of paymentStatusResult.rows) {
+      paymentStatusMap[(row as any).paymentStatus] = Number((row as any).count);
+    }
 
-    // ---- 7. Monthly revenue (last 6 months) ----
+    // ---- 7 & 8. Monthly revenue and sales count (last 6 months) ----
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     sixMonthsAgo.setDate(1);
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
-    const allSales = await db.sale.findMany({
-      where: { saleDate: { gte: sixMonthsAgo } },
-      select: { salePrice: true, saleDate: true },
-      orderBy: { saleDate: 'asc' },
+    const allSalesResult = await db.execute({
+      sql: `SELECT salePrice, saleDate FROM Sale WHERE saleDate >= ? ORDER BY saleDate ASC`,
+      args: [sixMonthsAgo.toISOString()],
     });
 
     const monthlyRevenueMap: Record<string, number> = {};
-    for (const sale of allSales) {
-      const key = sale.saleDate.toISOString().slice(0, 7); // YYYY-MM
-      monthlyRevenueMap[key] = (monthlyRevenueMap[key] || 0) + sale.salePrice;
+    const monthlySalesCountMap: Record<string, number> = {};
+
+    for (const sale of allSalesResult.rows) {
+      const saleDateStr = String((sale as any).saleDate);
+      const key = new Date(saleDateStr).toISOString().slice(0, 7);
+      monthlyRevenueMap[key] = (monthlyRevenueMap[key] || 0) + Number((sale as any).salePrice);
+      monthlySalesCountMap[key] = (monthlySalesCountMap[key] || 0) + 1;
     }
 
     // Fill in all months (including zeros)
     const monthlyRevenue: Array<{ month: string; revenue: number }> = [];
+    const monthlySalesCount: Array<{ month: string; count: number }> = [];
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = d.toISOString().slice(0, 7);
       const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
       monthlyRevenue.push({ month: label, revenue: Math.round(monthlyRevenueMap[key] || 0) });
-    }
-
-    // ---- 8. Monthly sales count (histogram) ----
-    const monthlySalesCountMap: Record<string, number> = {};
-    for (const sale of allSales) {
-      const key = sale.saleDate.toISOString().slice(0, 7);
-      monthlySalesCountMap[key] = (monthlySalesCountMap[key] || 0) + 1;
-    }
-
-    const monthlySalesCount: Array<{ month: string; count: number }> = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
-      const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
       monthlySalesCount.push({ month: label, count: monthlySalesCountMap[key] || 0 });
     }
 
     // ---- 9. Profit data: salePrice - buyPrice ----
-    const profitSales = await db.sale.findMany({
-      take: 100,
-      orderBy: { saleDate: 'desc' },
-      select: {
-        salePrice: true,
-        saleDate: true,
-        inventory: { select: { buyPrice: true } },
-      },
+    const profitSalesResult = await db.execute({
+      sql: `SELECT s.salePrice, s.saleDate, i.buyPrice
+            FROM Sale s
+            JOIN Inventory i ON i.id = s.inventoryId
+            ORDER BY s.saleDate DESC LIMIT 100`,
+      args: [],
     });
 
-    const totalProfit = profitSales.reduce(
-      (sum, s) => sum + (s.salePrice - (s.inventory?.buyPrice ?? 0)),
+    const totalProfit = profitSalesResult.rows.reduce(
+      (sum: number, s: any) => sum + (Number(s.salePrice) - Number(s.buyPrice)),
       0
     );
     const avgProfitPerSale = totalSales > 0 ? Math.round(totalProfit / totalSales) : 0;
 
     // ---- 10. Order stats ----
-    const ordersByStatus = await db.order.groupBy({ by: ['status'], _count: { id: true } });
+    const orderStatusResult = await db.execute(
+      `SELECT status, COUNT(*) as count FROM "Order" GROUP BY status`
+    );
     const orderStatusMap: Record<string, number> = { pending: 0, processing: 0, completed: 0, cancelled: 0 };
-    for (const order of ordersByStatus) orderStatusMap[order.status] = order._count.id;
+    for (const row of orderStatusResult.rows) {
+      orderStatusMap[(row as any).status] = Number((row as any).count);
+    }
     const totalOrders = Object.values(orderStatusMap).reduce((s, c) => s + c, 0);
 
     // ---- 11. Recent 5 sales ----
-    const recentSales = await db.sale.findMany({
-      take: 5,
-      orderBy: { saleDate: 'desc' },
-      include: {
-        buyer: { select: { id: true, name: true, phone: true } },
-        inventory: { select: { id: true, brand: true, model: true } },
-      },
+    const recentSalesResult = await db.execute({
+      sql: `SELECT s.*,
+            i.id as inv_id, i.brand as inv_brand, i.model as inv_model,
+            b.id as buyer_id, b.name as buyer_name, b.phone as buyer_phone
+            FROM Sale s
+            JOIN Inventory i ON i.id = s.inventoryId
+            LEFT JOIN Customer b ON b.id = s.buyerId
+            ORDER BY s.saleDate DESC LIMIT 5`,
+      args: [],
     });
+
+    const recentSales = recentSalesResult.rows.map((row: any) => ({
+      id: row.id,
+      inventoryId: row.inventoryId,
+      buyerId: row.buyerId,
+      salePrice: row.salePrice,
+      paymentStatus: row.paymentStatus,
+      paidAmount: row.paidAmount,
+      pendingAmount: row.pendingAmount,
+      warrantyMonths: row.warrantyMonths,
+      saleDate: row.saleDate,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      buyer: {
+        id: row.buyer_id,
+        name: row.buyer_name,
+        phone: row.buyer_phone,
+      },
+      inventory: {
+        id: row.inv_id,
+        brand: row.inv_brand,
+        model: row.inv_model,
+      },
+    }));
 
     // ---- 12. Recent 5 inventory items ----
-    const recentInventory = await db.inventory.findMany({
-      take: 5,
-      orderBy: { addedAt: 'desc' },
-      include: { seller: { select: { id: true, name: true } } },
+    const recentInventoryResult = await db.execute({
+      sql: `SELECT inv.*, c.id as seller_id, c.name as seller_name
+            FROM Inventory inv
+            LEFT JOIN Customer c ON c.id = inv.sellerId
+            ORDER BY inv.addedAt DESC LIMIT 5`,
+      args: [],
     });
 
+    const recentInventory = recentInventoryResult.rows.map((row: any) => ({
+      id: row.id,
+      brand: row.brand,
+      model: row.model,
+      ram: row.ram,
+      storage: row.storage,
+      color: row.color,
+      imeiNo: row.imeiNo,
+      condition: row.condition,
+      status: row.status,
+      sellerId: row.sellerId,
+      buyPrice: row.buyPrice,
+      repairRequired: toBool(row.repairRequired),
+      repairDetails: row.repairDetails,
+      repairCost: row.repairCost,
+      repairStatus: row.repairStatus,
+      addedAt: row.addedAt,
+      updatedAt: row.updatedAt,
+      seller: row.seller_id ? {
+        id: row.seller_id,
+        name: row.seller_name,
+      } : null,
+    }));
+
     // ---- 13. Repair stats ----
-    const repairNeededCount = await db.inventory.count({
-      where: { repairRequired: true, repairStatus: { in: ['pending', 'in_progress'] } },
-    });
-    const repairCompletedCount = await db.inventory.count({
-      where: { repairRequired: true, repairStatus: 'completed' },
-    });
+    const repairNeededResult = await db.execute(
+      `SELECT COUNT(*) as count FROM Inventory WHERE repairRequired = 1 AND repairStatus IN ('pending', 'in_progress')`
+    );
+    const repairNeededCount = Number(repairNeededResult.rows[0].count);
+
+    const repairCompletedResult = await db.execute(
+      `SELECT COUNT(*) as count FROM Inventory WHERE repairRequired = 1 AND repairStatus = 'completed'`
+    );
+    const repairCompletedCount = Number(repairCompletedResult.rows[0].count);
 
     // ---- 14. Today's stats (AAJ cards) ----
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
+    const todayStartISO = todayStart.toISOString();
 
-    // Aaj Buy: COUNT + SUM(buy_price) from inventory added today
-    const todayBuyItems = await db.inventory.findMany({
-      where: { addedAt: { gte: todayStart } },
-      select: { buyPrice: true },
+    // Aaj Buy
+    const todayBuyResult = await db.execute({
+      sql: 'SELECT COALESCE(SUM(buyPrice), 0) as total, COUNT(*) as count FROM Inventory WHERE addedAt >= ?',
+      args: [todayStartISO],
     });
-    const aajBuyCount = todayBuyItems.length;
-    const aajBuyAmount = todayBuyItems.reduce((s, i) => s + i.buyPrice, 0);
+    const aajBuyCount = Number(todayBuyResult.rows[0].count);
+    const aajBuyAmount = Number(todayBuyResult.rows[0].total);
 
-    // Aaj Sell: COUNT + SUM(sale_price) from sales today
-    const todaySellItems = await db.sale.findMany({
-      where: { saleDate: { gte: todayStart } },
-      select: { salePrice: true },
+    // Aaj Sell
+    const todaySellResult = await db.execute({
+      sql: 'SELECT COALESCE(SUM(salePrice), 0) as total, COUNT(*) as count FROM Sale WHERE saleDate >= ?',
+      args: [todayStartISO],
     });
-    const aajSellCount = todaySellItems.length;
-    const aajSellAmount = todaySellItems.reduce((s, i) => s + i.salePrice, 0);
+    const aajSellCount = Number(todaySellResult.rows[0].count);
+    const aajSellAmount = Number(todaySellResult.rows[0].total);
 
-    // Today Profit = (aaj sell amount) - (aaj buy amount)
     const todayProfit = aajSellAmount - aajBuyAmount;
 
     // Pending: repair not done + unpaid sales
-    const repairPendingCount = await db.inventory.count({
-      where: { repairRequired: true, repairStatus: { not: 'completed' } },
-    });
-    const unpaidSalesCount = await db.sale.count({
-      where: { paymentStatus: { not: 'full' } },
-    });
+    const repairPendingResult = await db.execute(
+      `SELECT COUNT(*) as count FROM Inventory WHERE repairRequired = 1 AND repairStatus != 'completed'`
+    );
+    const repairPendingCount = Number(repairPendingResult.rows[0].count);
+
+    const unpaidSalesResult = await db.execute(
+      `SELECT COUNT(*) as count FROM Sale WHERE paymentStatus != 'full'`
+    );
+    const unpaidSalesCount = Number(unpaidSalesResult.rows[0].count);
     const totalPendingItems = repairPendingCount + unpaidSalesCount;
 
-    // Legacy compat
     const todaySales = aajSellCount;
     const todayRevenueAmount = aajSellAmount;
 

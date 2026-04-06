@@ -1,8 +1,9 @@
-import { db } from '@/lib/db';
+import { getDb, toBool } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET ────────────────────────────────────────────
-// ?type=invoice|customers|stock&invoiceNo=INV-xxx&from=YYYY-MM-DD&to=YYYY-MM-DD
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -35,83 +36,102 @@ async function printInvoice(searchParams: URLSearchParams) {
     return NextResponse.json({ error: 'Invoice number is required' }, { status: 400 });
   }
 
-  const invoice = await db.invoice.findUnique({
-    where: { invoiceNo },
-    include: {
-      sale: {
-        include: {
-          inventory: {
-            select: { brand: true, model: true, ram: true, storage: true, color: true, imeiNo: true, condition: true },
-          },
-          buyer: {
-            select: { name: true, phone: true, address: true },
-          },
-        },
-      },
-      customer: {
-        select: { name: true, phone: true, address: true },
-      },
-    },
+  const db = getDb();
+
+  const invoiceResult = await db.execute({
+    sql: `SELECT inv.*,
+          s.warrantyMonths as sale_warranty, s.saleDate as sale_date,
+          i.brand, i.model, i.ram, i.storage, i.color, i.imeiNo, i."condition" as item_condition,
+          buyer.name as buyer_name, buyer.phone as buyer_phone, buyer.address as buyer_address,
+          cust.name as cust_name, cust.phone as cust_phone, cust.address as cust_address
+          FROM Invoice inv
+          JOIN Sale s ON s.id = inv.saleId
+          JOIN Inventory i ON i.id = s.inventoryId
+          JOIN Customer buyer ON buyer.id = s.buyerId
+          JOIN Customer cust ON cust.id = inv.customerId
+          WHERE inv.invoiceNo = ?`,
+    args: [invoiceNo],
   });
 
-  if (!invoice) {
+  if (invoiceResult.rows.length === 0) {
     return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
   }
 
-  // Get shop details
-  const shop = await db.shop.findFirst({ take: 1 });
+  const row = invoiceResult.rows[0];
+
+  const shopResult = await db.execute('SELECT * FROM Shop LIMIT 1');
+  const shopRow = shopResult.rows.length > 0 ? shopResult.rows[0] : null;
+
+  const totalAmount = Number(row.totalAmount);
+  const gstAmount = Number(row.gstAmount);
+  const subTotal = Math.round((totalAmount / 1.18) * 100) / 100;
 
   return NextResponse.json({
     invoice: {
-      invoiceNo: invoice.invoiceNo,
-      date: invoice.createdAt.toISOString().split('T')[0],
-      totalAmount: invoice.totalAmount,
-      paidAmount: invoice.paidAmount,
-      pendingAmount: invoice.pendingAmount,
-      gstAmount: invoice.gstAmount,
-      subTotal: Math.round((invoice.totalAmount / 1.18) * 100) / 100,
-      cgst: Math.round(invoice.gstAmount / 2 * 100) / 100,
-      sgst: Math.round(invoice.gstAmount / 2 * 100) / 100,
-      warrantyMonths: invoice.sale.warrantyMonths,
+      invoiceNo: row.invoiceNo,
+      date: String(row.createdAt).split('T')[0],
+      totalAmount: row.totalAmount,
+      paidAmount: row.paidAmount,
+      pendingAmount: row.pendingAmount,
+      gstAmount: row.gstAmount,
+      subTotal,
+      cgst: Math.round(gstAmount / 2 * 100) / 100,
+      sgst: Math.round(gstAmount / 2 * 100) / 100,
+      warrantyMonths: row.sale_warranty,
     },
-    phone: invoice.sale.inventory,
-    buyer: invoice.customer,
-    shop: shop ? {
-      name: shop.shopName,
-      gstNo: shop.gstNo,
-      address: shop.address,
-      phone: shop.phone,
+    phone: {
+      brand: row.brand,
+      model: row.model,
+      ram: row.ram,
+      storage: row.storage,
+      color: row.color,
+      imeiNo: row.imeiNo,
+      condition: row.item_condition,
+    },
+    buyer: {
+      name: row.cust_name,
+      phone: row.cust_phone,
+      address: row.cust_address,
+    },
+    shop: shopRow ? {
+      name: shopRow.shopName,
+      gstNo: shopRow.gstNo,
+      address: shopRow.address,
+      phone: shopRow.phone,
     } : null,
   });
 }
 
 // ─── Print Customer List ───────────────────────────
 async function printCustomers() {
-  const customers = await db.customer.findMany({
-    orderBy: { name: 'asc' },
+  const db = getDb();
+
+  const customersResult = await db.execute({
+    sql: 'SELECT * FROM Customer ORDER BY name ASC',
+    args: [],
   });
 
-  const customerData = customers.map((c) => ({
+  const customerData = customersResult.rows.map((c: any) => ({
     name: c.name,
     phone: c.phone,
     address: c.address,
     aadharNo: c.aadharNo,
     type: c.type,
-    createdAt: c.createdAt.toISOString().split('T')[0],
+    createdAt: String(c.createdAt).split('T')[0],
   }));
 
-  // Get shop details
-  const shop = await db.shop.findFirst({ take: 1 });
+  const shopResult = await db.execute('SELECT * FROM Shop LIMIT 1');
+  const shopRow = shopResult.rows.length > 0 ? shopResult.rows[0] : null;
 
   return NextResponse.json({
     customers: customerData,
-    totalCustomers: customers.length,
+    totalCustomers: customersResult.rows.length,
     generatedAt: new Date().toISOString(),
-    shop: shop ? {
-      name: shop.shopName,
-      gstNo: shop.gstNo,
-      address: shop.address,
-      phone: shop.phone,
+    shop: shopRow ? {
+      name: shopRow.shopName,
+      gstNo: shopRow.gstNo,
+      address: shopRow.address,
+      phone: shopRow.phone,
     } : null,
   });
 }
@@ -125,45 +145,56 @@ async function printBuySellReport(searchParams: URLSearchParams) {
   to.setHours(23, 59, 59, 999);
   from.setHours(0, 0, 0, 0);
 
-  const [inventoryItems, sales] = await Promise.all([
-    db.inventory.findMany({
-      where: { addedAt: { gte: from, lte: to } },
-      include: { seller: { select: { name: true, phone: true } } },
-      orderBy: { addedAt: 'asc' },
+  const db = getDb();
+
+  const [inventoryResult, salesResult] = await Promise.all([
+    db.execute({
+      sql: `SELECT inv.*, c.name as seller_name, c.phone as seller_phone
+            FROM Inventory inv
+            LEFT JOIN Customer c ON c.id = inv.sellerId
+            WHERE inv.addedAt >= ? AND inv.addedAt <= ?
+            ORDER BY inv.addedAt ASC`,
+      args: [from.toISOString(), to.toISOString()],
     }),
-    db.sale.findMany({
-      where: { saleDate: { gte: from, lte: to } },
-      include: {
-        inventory: { select: { brand: true, model: true, buyPrice: true, repairCost: true } },
-        buyer: { select: { name: true, phone: true } },
-      },
-      orderBy: { saleDate: 'asc' },
+    db.execute({
+      sql: `SELECT s.*,
+            i.brand, i.model, i.buyPrice as inv_buyPrice, i.repairCost as inv_repairCost,
+            c.name as buyer_name, c.phone as buyer_phone
+            FROM Sale s
+            JOIN Inventory i ON i.id = s.inventoryId
+            LEFT JOIN Customer c ON c.id = s.buyerId
+            WHERE s.saleDate >= ? AND s.saleDate <= ?
+            ORDER BY s.saleDate ASC`,
+      args: [from.toISOString(), to.toISOString()],
     }),
   ]);
 
-  const totalBuy = inventoryItems.reduce((s, i) => s + i.buyPrice, 0);
-  const totalSell = sales.reduce((s, sa) => s + sa.salePrice, 0);
-  const totalRepairs = inventoryItems.reduce((s, i) => s + i.repairCost, 0);
+  const inventoryItems = inventoryResult.rows;
+  const sales = salesResult.rows;
 
-  // Get shop details
-  const shop = await db.shop.findFirst({ take: 1 });
+  const totalBuy = inventoryItems.reduce((s: number, i: any) => s + i.buyPrice, 0);
+  const totalSell = sales.reduce((s: number, sa: any) => s + sa.salePrice, 0);
+  const totalRepairs = inventoryItems.reduce((s: number, i: any) => s + i.repairCost, 0);
+
+  const shopResult = await db.execute('SELECT * FROM Shop LIMIT 1');
+  const shopRow = shopResult.rows.length > 0 ? shopResult.rows[0] : null;
 
   return NextResponse.json({
-    buys: inventoryItems.map((item) => ({
-      date: item.addedAt.toISOString().split('T')[0],
+    buys: inventoryItems.map((item: any) => ({
+      date: String(item.addedAt).split('T')[0],
       brand: item.brand,
       model: item.model,
       imeiNo: item.imeiNo || 'N/A',
       condition: item.condition,
       buyPrice: item.buyPrice,
       repairCost: item.repairCost,
-      seller: item.seller?.name || 'Walk-in',
+      seller: item.seller_name || 'Walk-in',
     })),
-    sells: sales.map((sale) => ({
-      date: sale.saleDate.toISOString().split('T')[0],
-      brand: sale.inventory.brand,
-      model: sale.inventory.model,
-      buyer: sale.buyer?.name || 'Unknown',
+    sells: sales.map((sale: any) => ({
+      date: String(sale.saleDate).split('T')[0],
+      brand: sale.brand,
+      model: sale.model,
+      buyer: sale.buyer_name || 'Unknown',
       salePrice: sale.salePrice,
       paymentStatus: sale.paymentStatus,
     })),
@@ -179,31 +210,36 @@ async function printBuySellReport(searchParams: URLSearchParams) {
     from: from.toISOString().split('T')[0],
     to: to.toISOString().split('T')[0],
     generatedAt: new Date().toISOString(),
-    shop: shop ? {
-      name: shop.shopName,
-      gstNo: shop.gstNo,
-      address: shop.address,
-      phone: shop.phone,
+    shop: shopRow ? {
+      name: shopRow.shopName,
+      gstNo: shopRow.gstNo,
+      address: shopRow.address,
+      phone: shopRow.phone,
     } : null,
   });
 }
 
 // ─── Print Stock Report ────────────────────────────
 async function printStockReport() {
-  const unsoldItems = await db.inventory.findMany({
-    where: { status: { in: ['pending', 'complete'] } },
-    include: {
-      seller: { select: { name: true, phone: true } },
-    },
-    orderBy: { addedAt: 'desc' },
+  const db = getDb();
+
+  const unsoldResult = await db.execute({
+    sql: `SELECT inv.*, c.name as seller_name, c.phone as seller_phone
+          FROM Inventory inv
+          LEFT JOIN Customer c ON c.id = inv.sellerId
+          WHERE inv.status IN ('pending', 'complete')
+          ORDER BY inv.addedAt DESC`,
+    args: [],
   });
 
+  const unsoldItems = unsoldResult.rows;
   const now = new Date();
-  const stockData = unsoldItems.map((item) => {
+
+  const stockData = unsoldItems.map((item: any) => {
     const addedDate = new Date(item.addedAt);
     const daysInStock = Math.floor((now.getTime() - addedDate.getTime()) / (1000 * 60 * 60 * 24));
     return {
-      date: item.addedAt.toISOString().split('T')[0],
+      date: String(item.addedAt).split('T')[0],
       brand: item.brand,
       model: item.model,
       imeiNo: item.imeiNo || 'N/A',
@@ -211,16 +247,16 @@ async function printStockReport() {
       status: item.status,
       buyPrice: item.buyPrice,
       repairCost: item.repairCost,
-      seller: item.seller?.name || 'Walk-in',
+      seller: item.seller_name || 'Walk-in',
       daysInStock,
     };
   });
 
-  const totalInvested = unsoldItems.reduce((s, i) => s + i.buyPrice, 0);
-  const totalRepairPending = unsoldItems.reduce((s, i) => s + i.repairCost, 0);
+  const totalInvested = unsoldItems.reduce((s: number, i: any) => s + i.buyPrice, 0);
+  const totalRepairPending = unsoldItems.reduce((s: number, i: any) => s + i.repairCost, 0);
 
-  // Get shop details
-  const shop = await db.shop.findFirst({ take: 1 });
+  const shopResult = await db.execute('SELECT * FROM Shop LIMIT 1');
+  const shopRow = shopResult.rows.length > 0 ? shopResult.rows[0] : null;
 
   return NextResponse.json({
     stock: stockData,
@@ -228,11 +264,11 @@ async function printStockReport() {
     totalInvested,
     totalRepairPending,
     generatedAt: new Date().toISOString(),
-    shop: shop ? {
-      name: shop.shopName,
-      gstNo: shop.gstNo,
-      address: shop.address,
-      phone: shop.phone,
+    shop: shopRow ? {
+      name: shopRow.shopName,
+      gstNo: shopRow.gstNo,
+      address: shopRow.address,
+      phone: shopRow.phone,
     } : null,
   });
 }

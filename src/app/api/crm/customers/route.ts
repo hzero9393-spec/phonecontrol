@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { Prisma } from '@prisma/client';
+import { getDb } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 // GET: List customers with search and pagination
 export async function GET(request: NextRequest) {
@@ -9,29 +10,32 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20', 10)));
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
+    const db = getDb();
 
-    const where: Prisma.CustomerWhereInput = search
-      ? {
-          OR: [
-            { name: { contains: search } },
-            { phone: { contains: search } },
-          ],
-        }
-      : {};
+    let whereClause = '';
+    const args: any[] = [];
 
-    const [customers, total] = await Promise.all([
-      db.customer.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
+    if (search) {
+      whereClause = 'WHERE name LIKE ? OR phone LIKE ?';
+      args.push(`%${search}%`, `%${search}%`);
+    }
+
+    const [customers, countResult] = await Promise.all([
+      db.execute({
+        sql: `SELECT * FROM Customer ${whereClause} ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
+        args: [...args, limit, offset],
       }),
-      db.customer.count({ where }),
+      db.execute({
+        sql: `SELECT COUNT(*) as count FROM Customer ${whereClause}`,
+        args,
+      }),
     ]);
 
+    const total = Number(countResult.rows[0].count);
+
     return NextResponse.json({
-      customers,
+      customers: customers.rows.map(rowToCustomer),
       pagination: {
         page,
         limit,
@@ -57,18 +61,28 @@ export async function POST(request: NextRequest) {
 
     const validTypes = ['seller', 'buyer', 'both'];
     const customerType = validTypes.includes(type) ? type : 'both';
+    const id = 'cust-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const now = new Date().toISOString();
+    const db = getDb();
 
-    const customer = await db.customer.create({
-      data: {
+    await db.execute({
+      sql: `INSERT INTO Customer (id, name, phone, address, aadharNo, type, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, name.trim(), phone?.trim() || '', address?.trim() || '', aadharNo?.trim() || '', customerType, now, now],
+    });
+
+    return NextResponse.json({
+      customer: {
+        id,
         name: name.trim(),
         phone: phone?.trim() || '',
         address: address?.trim() || '',
         aadharNo: aadharNo?.trim() || '',
         type: customerType,
+        createdAt: now,
+        updatedAt: now,
       },
-    });
-
-    return NextResponse.json({ customer }, { status: 201 });
+    }, { status: 201 });
   } catch (error) {
     console.error('Customers POST error:', error);
     return NextResponse.json({ error: 'Failed to create customer' }, { status: 500 });
@@ -87,28 +101,44 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const { name, phone, address, aadharNo, type } = body;
+    const db = getDb();
 
-    // Check if customer exists
-    const existing = await db.customer.findUnique({ where: { id } });
-    if (!existing) {
+    const existing = await db.execute({
+      sql: 'SELECT id FROM Customer WHERE id = ?',
+      args: [id],
+    });
+    if (existing.rows.length === 0) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    const validTypes = ['seller', 'buyer', 'both'];
+    const sets: string[] = [];
+    const args: any[] = [];
 
-    const updateData: Prisma.CustomerUpdateInput = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (phone !== undefined) updateData.phone = phone.trim();
-    if (address !== undefined) updateData.address = address.trim();
-    if (aadharNo !== undefined) updateData.aadharNo = aadharNo.trim();
-    if (type !== undefined && validTypes.includes(type)) updateData.type = type;
+    if (name !== undefined) { sets.push('name = ?'); args.push(name.trim()); }
+    if (phone !== undefined) { sets.push('phone = ?'); args.push(phone.trim()); }
+    if (address !== undefined) { sets.push('address = ?'); args.push(address.trim()); }
+    if (aadharNo !== undefined) { sets.push('aadharNo = ?'); args.push(aadharNo.trim()); }
+    if (type !== undefined && ['seller', 'buyer', 'both'].includes(type)) { sets.push('type = ?'); args.push(type); }
 
-    const customer = await db.customer.update({
-      where: { id },
-      data: updateData,
+    if (sets.length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    }
+
+    sets.push("updatedAt = ?");
+    args.push(new Date().toISOString());
+    args.push(id);
+
+    await db.execute({
+      sql: `UPDATE Customer SET ${sets.join(', ')} WHERE id = ?`,
+      args,
     });
 
-    return NextResponse.json({ customer });
+    const updated = await db.execute({
+      sql: 'SELECT * FROM Customer WHERE id = ?',
+      args: [id],
+    });
+
+    return NextResponse.json({ customer: rowToCustomer(updated.rows[0]) });
   } catch (error) {
     console.error('Customers PUT error:', error);
     return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 });
@@ -125,17 +155,37 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Customer id is required' }, { status: 400 });
     }
 
-    // Check if customer exists
-    const existing = await db.customer.findUnique({ where: { id } });
-    if (!existing) {
+    const db = getDb();
+    const existing = await db.execute({
+      sql: 'SELECT id FROM Customer WHERE id = ?',
+      args: [id],
+    });
+    if (existing.rows.length === 0) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    await db.customer.delete({ where: { id } });
+    await db.execute({
+      sql: 'DELETE FROM Customer WHERE id = ?',
+      args: [id],
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Customers DELETE error:', error);
     return NextResponse.json({ error: 'Failed to delete customer' }, { status: 500 });
   }
+}
+
+function rowToCustomer(row: any) {
+  if (!row) return null;
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    phone: row.phone as string,
+    address: row.address as string,
+    aadharNo: row.aadharNo as string,
+    type: row.type as string,
+    createdAt: row.createdAt as string,
+    updatedAt: row.updatedAt as string,
+  };
 }

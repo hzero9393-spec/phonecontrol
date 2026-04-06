@@ -1,5 +1,7 @@
-import { db } from '@/lib/db';
+import { getDb, toBool } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 // ─── Helper ─────────────────────────────────────────
 function parseDateRange(request: NextRequest) {
@@ -14,7 +16,6 @@ function parseDateRange(request: NextRequest) {
 }
 
 // ─── GET ────────────────────────────────────────────
-// ?type=buy|sell|profit|top&from=YYYY-MM-DD&to=YYYY-MM-DD
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -42,30 +43,29 @@ export async function GET(request: NextRequest) {
 // ─── Section 1: Buy Report ─────────────────────────
 async function buyReport(request: NextRequest) {
   const { from, to } = parseDateRange(request);
+  const db = getDb();
 
-  const items = await db.inventory.findMany({
-    where: {
-      addedAt: { gte: from, lte: to },
-    },
-    include: {
-      seller: {
-        select: { id: true, name: true, phone: true },
-      },
-    },
-    orderBy: { addedAt: 'desc' },
+  const itemsResult = await db.execute({
+    sql: `SELECT i.*, c.id as seller_id, c.name as seller_name, c.phone as seller_phone
+          FROM Inventory i
+          LEFT JOIN Customer c ON c.id = i.sellerId
+          WHERE i.addedAt >= ? AND i.addedAt <= ?
+          ORDER BY i.addedAt DESC`,
+    args: [from.toISOString(), to.toISOString()],
   });
 
+  const items = itemsResult.rows;
   const count = items.length;
-  const totalBuyAmount = items.reduce((sum, item) => sum + item.buyPrice, 0);
-  const totalRepairCost = items.reduce((sum, item) => sum + item.repairCost, 0);
+  const totalBuyAmount = items.reduce((sum: number, item: any) => sum + item.buyPrice, 0);
+  const totalRepairCost = items.reduce((sum: number, item: any) => sum + item.repairCost, 0);
 
-  const tableData = items.map((item) => ({
+  const tableData = items.map((item: any) => ({
     id: item.id,
-    date: item.addedAt.toISOString().split('T')[0],
+    date: String(item.addedAt).split('T')[0],
     brand: item.brand,
     model: item.model,
     imeiNo: item.imeiNo || 'N/A',
-    seller: item.seller?.name || 'Walk-in',
+    seller: item.seller_name || 'Walk-in',
     buyPrice: item.buyPrice,
     condition: item.condition,
     status: item.status,
@@ -85,33 +85,32 @@ async function buyReport(request: NextRequest) {
 // ─── Section 2: Sell Report ────────────────────────
 async function sellReport(request: NextRequest) {
   const { from, to } = parseDateRange(request);
+  const db = getDb();
 
-  const sales = await db.sale.findMany({
-    where: {
-      saleDate: { gte: from, lte: to },
-    },
-    include: {
-      inventory: {
-        select: { id: true, brand: true, model: true, buyPrice: true },
-      },
-      buyer: {
-        select: { id: true, name: true, phone: true },
-      },
-    },
-    orderBy: { saleDate: 'desc' },
+  const salesResult = await db.execute({
+    sql: `SELECT s.*,
+          i.brand, i.model, i.buyPrice as inv_buyPrice,
+          c.id as buyer_id, c.name as buyer_name, c.phone as buyer_phone
+          FROM Sale s
+          JOIN Inventory i ON i.id = s.inventoryId
+          LEFT JOIN Customer c ON c.id = s.buyerId
+          WHERE s.saleDate >= ? AND s.saleDate <= ?
+          ORDER BY s.saleDate DESC`,
+    args: [from.toISOString(), to.toISOString()],
   });
 
+  const sales = salesResult.rows;
   const count = sales.length;
-  const totalSellAmount = sales.reduce((sum, s) => sum + s.salePrice, 0);
-  const totalPaid = sales.reduce((sum, s) => sum + s.paidAmount, 0);
-  const totalPending = sales.reduce((sum, s) => sum + s.pendingAmount, 0);
+  const totalSellAmount = sales.reduce((sum: number, s: any) => sum + s.salePrice, 0);
+  const totalPaid = sales.reduce((sum: number, s: any) => sum + s.paidAmount, 0);
+  const totalPending = sales.reduce((sum: number, s: any) => sum + s.pendingAmount, 0);
 
-  const tableData = sales.map((sale) => ({
+  const tableData = sales.map((sale: any) => ({
     id: sale.id,
-    date: sale.saleDate.toISOString().split('T')[0],
-    brand: sale.inventory.brand,
-    model: sale.inventory.model,
-    buyer: sale.buyer?.name || 'Unknown',
+    date: String(sale.saleDate).split('T')[0],
+    brand: sale.brand,
+    model: sale.model,
+    buyer: sale.buyer_name || 'Unknown',
     salePrice: sale.salePrice,
     paidAmount: sale.paidAmount,
     pendingAmount: sale.pendingAmount,
@@ -133,33 +132,30 @@ async function sellReport(request: NextRequest) {
 // ─── Section 3: Profit/Loss Report ─────────────────
 async function profitLossReport(request: NextRequest) {
   const { from, to } = parseDateRange(request);
+  const db = getDb();
 
-  const sales = await db.sale.findMany({
-    where: {
-      saleDate: { gte: from, lte: to },
-    },
-    include: {
-      inventory: {
-        select: { id: true, brand: true, model: true, buyPrice: true, repairCost: true },
-      },
-      buyer: {
-        select: { id: true, name: true, phone: true },
-      },
-    },
-    orderBy: { saleDate: 'desc' },
+  const salesResult = await db.execute({
+    sql: `SELECT s.*,
+          i.brand, i.model, i.buyPrice as inv_buyPrice, i.repairCost as inv_repairCost
+          FROM Sale s
+          JOIN Inventory i ON i.id = s.inventoryId
+          WHERE s.saleDate >= ? AND s.saleDate <= ?`,
+    args: [from.toISOString(), to.toISOString()],
   });
 
-  const inventoryItems = await db.inventory.findMany({
-    where: {
-      addedAt: { gte: from, lte: to },
-    },
+  const inventoryResult = await db.execute({
+    sql: 'SELECT * FROM Inventory WHERE addedAt >= ? AND addedAt <= ?',
+    args: [from.toISOString(), to.toISOString()],
   });
 
-  const totalSellAmount = sales.reduce((sum, s) => sum + s.salePrice, 0);
-  const totalBuyAmount = sales.reduce((sum, s) => sum + s.inventory.buyPrice, 0);
-  const totalRepairCosts = sales.reduce((sum, s) => sum + s.inventory.repairCost, 0);
-  const totalUnsoldBuyAmount = inventoryItems.reduce((sum, item) => sum + item.buyPrice, 0);
-  const totalUnsoldRepairCosts = inventoryItems.reduce((sum, item) => sum + item.repairCost, 0);
+  const sales = salesResult.rows;
+  const inventoryItems = inventoryResult.rows;
+
+  const totalSellAmount = sales.reduce((sum: number, s: any) => sum + s.salePrice, 0);
+  const totalBuyAmount = sales.reduce((sum: number, s: any) => sum + s.inv_buyPrice, 0);
+  const totalRepairCosts = sales.reduce((sum: number, s: any) => sum + s.inv_repairCost, 0);
+  const totalUnsoldBuyAmount = inventoryItems.reduce((sum: number, item: any) => sum + item.buyPrice, 0);
+  const totalUnsoldRepairCosts = inventoryItems.reduce((sum: number, item: any) => sum + item.repairCost, 0);
 
   const grossProfit = totalSellAmount - totalBuyAmount;
   const netProfit = grossProfit - totalRepairCosts;
@@ -172,7 +168,7 @@ async function profitLossReport(request: NextRequest) {
     totalRepairCosts,
     grossProfit,
     netProfit,
-    totalUnsoldItems: inventoryItems.filter((i) => i.status !== 'done').length,
+    totalUnsoldItems: inventoryItems.filter((i: any) => i.status !== 'done').length,
     totalUnsoldBuyAmount,
     totalUnsoldRepairCosts,
     totalInvestment,
@@ -185,76 +181,71 @@ async function profitLossReport(request: NextRequest) {
 
 // ─── Section 4: Top Reports ────────────────────────
 async function topReport() {
+  const db = getDb();
+
   // Top 5 customers by purchase amount
-  const topCustomers = await db.sale.groupBy({
-    by: ['buyerId'],
-    _sum: { salePrice: true },
-    _count: { id: true },
-    orderBy: { _sum: { salePrice: 'desc' } },
-    take: 5,
+  const topCustomersResult = await db.execute({
+    sql: `SELECT buyerId, SUM(salePrice) as totalAmount, COUNT(*) as purchaseCount
+          FROM Sale GROUP BY buyerId ORDER BY totalAmount DESC LIMIT 5`,
+    args: [],
   });
 
   const topCustomersData = await Promise.all(
-    topCustomers.map(async (tc) => {
-      const customer = await db.customer.findUnique({
-        where: { id: tc.buyerId },
-        select: { name: true, phone: true },
+    topCustomersResult.rows.map(async (tc: any, index: number) => {
+      const customerResult = await db.execute({
+        sql: 'SELECT name, phone FROM Customer WHERE id = ?',
+        args: [tc.buyerId],
       });
+      const customer = customerResult.rows[0];
       return {
-        rank: 0,
+        rank: index + 1,
         name: customer?.name || 'Unknown',
         phone: customer?.phone || '',
-        totalAmount: tc._sum.salePrice || 0,
-        purchaseCount: tc._count.id,
+        totalAmount: tc.totalAmount || 0,
+        purchaseCount: tc.purchaseCount,
       };
     })
   );
-  topCustomersData.forEach((c, i) => (c.rank = i + 1));
 
   // Top 5 brands by sales count
-  const topBrands = await db.inventory.findMany({
-    where: { status: 'done' },
-    select: { brand: true },
+  const topBrandsResult = await db.execute({
+    sql: `SELECT brand FROM Inventory WHERE status = 'done'`,
+    args: [],
   });
 
   const brandCountMap: Record<string, number> = {};
-  topBrands.forEach((item) => {
-    brandCountMap[item.brand] = (brandCountMap[item.brand] || 0) + 1;
-  });
+  for (const item of topBrandsResult.rows) {
+    const brand = (item as any).brand;
+    brandCountMap[brand] = (brandCountMap[brand] || 0) + 1;
+  }
 
   const topBrandsData = Object.entries(brandCountMap)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
-    .map(([name, count], i) => ({
-      rank: i + 1,
-      name,
-      salesCount: count,
-    }));
+    .map(([name, count], i) => ({ rank: i + 1, name, salesCount: count }));
 
   // Top 5 highest profit phones
-  const profitableSales = await db.sale.findMany({
-    where: { paymentStatus: 'full' },
-    include: {
-      inventory: {
-        select: { brand: true, model: true, buyPrice: true, repairCost: true },
-      },
-    },
-    orderBy: { salePrice: 'desc' },
-    take: 50,
+  const profitableSalesResult = await db.execute({
+    sql: `SELECT s.salePrice, i.brand, i.model, i.buyPrice, i.repairCost
+          FROM Sale s
+          JOIN Inventory i ON i.id = s.inventoryId
+          WHERE s.paymentStatus = 'full'
+          ORDER BY s.salePrice DESC LIMIT 50`,
+    args: [],
   });
 
-  const profitPhones = profitableSales
-    .map((s) => ({
-      brand: s.inventory.brand,
-      model: s.inventory.model,
-      buyPrice: s.inventory.buyPrice,
+  const profitPhones = profitableSalesResult.rows
+    .map((s: any) => ({
+      brand: s.brand,
+      model: s.model,
+      buyPrice: s.buyPrice,
       sellPrice: s.salePrice,
-      repairCost: s.inventory.repairCost,
-      profit: s.salePrice - s.inventory.buyPrice - s.inventory.repairCost,
+      repairCost: s.repairCost,
+      profit: s.salePrice - s.buyPrice - s.repairCost,
     }))
-    .sort((a, b) => b.profit - a.profit)
+    .sort((a: any, b: any) => b.profit - a.profit)
     .slice(0, 5)
-    .map((p, i) => ({ ...p, rank: i + 1 }));
+    .map((p: any, i: number) => ({ ...p, rank: i + 1 }));
 
   return NextResponse.json({
     topCustomers: topCustomersData,

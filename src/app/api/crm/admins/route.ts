@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { createHash } from 'crypto';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,26 +11,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Check if requester is a master
-    const requester = await db.admin.findUnique({ where: { id: adminId } });
-    if (!requester || requester.role !== 'master') {
+    const db = getDb();
+
+    const requesterResult = await db.execute({
+      sql: 'SELECT id, role FROM Admin WHERE id = ?',
+      args: [adminId],
+    });
+    if (requesterResult.rows.length === 0 || requesterResult.rows[0].role !== 'master') {
       return NextResponse.json({ error: 'Access denied. Master role required.' }, { status: 403 });
     }
 
-    const admins = await db.admin.findMany({
-      select: {
-        id: true,
-        username: true,
-        role: true,
-        fullName: true,
-        mobile: true,
-        email: true,
-        createdBy: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
+    const result = await db.execute({
+      sql: `SELECT id, username, role, fullName, mobile, email, createdBy, createdAt, updatedAt
+            FROM Admin ORDER BY createdAt DESC`,
+      args: [],
     });
+
+    const admins = result.rows.map((row: any) => ({
+      id: row.id,
+      username: row.username,
+      role: row.role,
+      fullName: row.fullName,
+      mobile: row.mobile,
+      email: row.email,
+      createdBy: row.createdBy,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }));
 
     return NextResponse.json(admins);
   } catch (error) {
@@ -44,9 +53,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Check if requester is a master
-    const requester = await db.admin.findUnique({ where: { id: adminId } });
-    if (!requester || requester.role !== 'master') {
+    const db = getDb();
+
+    const requesterResult = await db.execute({
+      sql: 'SELECT id, role FROM Admin WHERE id = ?',
+      args: [adminId],
+    });
+    if (requesterResult.rows.length === 0 || requesterResult.rows[0].role !== 'master') {
       return NextResponse.json({ error: 'Access denied. Master role required.' }, { status: 403 });
     }
 
@@ -57,38 +70,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
 
-    // Check for existing username
-    const existing = await db.admin.findUnique({ where: { username } });
-    if (existing) {
+    const existingResult = await db.execute({
+      sql: 'SELECT id FROM Admin WHERE username = ?',
+      args: [username],
+    });
+    if (existingResult.rows.length > 0) {
       return NextResponse.json({ error: 'Username already exists' }, { status: 400 });
     }
 
     const hash = createHash('md5').update(password).digest('hex');
+    const id = 'admin-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const now = new Date().toISOString();
 
-    const admin = await db.admin.create({
-      data: {
-        username,
-        password: hash,
-        role: role || 'admin',
-        fullName: fullName || '',
-        mobile: mobile || '',
-        email: email || '',
-        createdBy: adminId,
-      },
-      select: {
-        id: true,
-        username: true,
-        role: true,
-        fullName: true,
-        mobile: true,
-        email: true,
-        createdBy: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    await db.execute({
+      sql: `INSERT INTO Admin (id, username, password, role, fullName, mobile, email, createdBy, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, username, hash, role || 'admin', fullName || '', mobile || '', email || '', adminId, now, now],
     });
 
-    return NextResponse.json(admin, { status: 201 });
+    return NextResponse.json({
+      id, username, role: role || 'admin', fullName: fullName || '',
+      mobile: mobile || '', email: email || '', createdBy: adminId,
+      createdAt: now, updatedAt: now,
+    }, { status: 201 });
   } catch (error) {
     console.error('Admins POST error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
@@ -102,9 +106,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Check if requester is a master
-    const requester = await db.admin.findUnique({ where: { id: adminId } });
-    if (!requester || requester.role !== 'master') {
+    const db = getDb();
+
+    const requesterResult = await db.execute({
+      sql: 'SELECT id, role FROM Admin WHERE id = ?',
+      args: [adminId],
+    });
+    if (requesterResult.rows.length === 0 || requesterResult.rows[0].role !== 'master') {
       return NextResponse.json({ error: 'Access denied. Master role required.' }, { status: 403 });
     }
 
@@ -115,47 +123,59 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Admin ID is required' }, { status: 400 });
     }
 
-    const existing = await db.admin.findUnique({ where: { id } });
-    if (!existing) {
+    const existingResult = await db.execute({
+      sql: 'SELECT id, username FROM Admin WHERE id = ?',
+      args: [id],
+    });
+    if (existingResult.rows.length === 0) {
       return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
     }
+    const existing = existingResult.rows[0];
 
     const body = await request.json();
     const { username, password, role, fullName, mobile, email } = body;
 
     // Check username uniqueness if changing
     if (username && username !== existing.username) {
-      const duplicate = await db.admin.findUnique({ where: { username } });
-      if (duplicate) {
+      const duplicateResult = await db.execute({
+        sql: 'SELECT id FROM Admin WHERE username = ?',
+        args: [username],
+      });
+      if (duplicateResult.rows.length > 0) {
         return NextResponse.json({ error: 'Username already exists' }, { status: 400 });
       }
     }
 
-    const updateData: Record<string, unknown> = {};
-    if (username !== undefined) updateData.username = username;
-    if (password) updateData.password = createHash('md5').update(password).digest('hex');
-    if (role !== undefined) updateData.role = role;
-    if (fullName !== undefined) updateData.fullName = fullName;
-    if (mobile !== undefined) updateData.mobile = mobile;
-    if (email !== undefined) updateData.email = email;
+    const sets: string[] = [];
+    const args: any[] = [];
 
-    const admin = await db.admin.update({
-      where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        username: true,
-        role: true,
-        fullName: true,
-        mobile: true,
-        email: true,
-        createdBy: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    if (username !== undefined) { sets.push('username = ?'); args.push(username); }
+    if (password) { sets.push('password = ?'); args.push(createHash('md5').update(password).digest('hex')); }
+    if (role !== undefined) { sets.push('role = ?'); args.push(role); }
+    if (fullName !== undefined) { sets.push('fullName = ?'); args.push(fullName); }
+    if (mobile !== undefined) { sets.push('mobile = ?'); args.push(mobile); }
+    if (email !== undefined) { sets.push('email = ?'); args.push(email); }
+
+    sets.push("updatedAt = ?");
+    args.push(new Date().toISOString());
+    args.push(id);
+
+    await db.execute({
+      sql: `UPDATE Admin SET ${sets.join(', ')} WHERE id = ?`,
+      args,
     });
 
-    return NextResponse.json(admin);
+    const result = await db.execute({
+      sql: `SELECT id, username, role, fullName, mobile, email, createdBy, createdAt, updatedAt FROM Admin WHERE id = ?`,
+      args: [id],
+    });
+    const admin = result.rows[0];
+
+    return NextResponse.json({
+      id: admin.id, username: admin.username, role: admin.role,
+      fullName: admin.fullName, mobile: admin.mobile, email: admin.email,
+      createdBy: admin.createdBy, createdAt: admin.createdAt, updatedAt: admin.updatedAt,
+    });
   } catch (error) {
     console.error('Admins PUT error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
@@ -169,9 +189,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Check if requester is a master
-    const requester = await db.admin.findUnique({ where: { id: adminId } });
-    if (!requester || requester.role !== 'master') {
+    const db = getDb();
+
+    const requesterResult = await db.execute({
+      sql: 'SELECT id, role FROM Admin WHERE id = ?',
+      args: [adminId],
+    });
+    if (requesterResult.rows.length === 0 || requesterResult.rows[0].role !== 'master') {
       return NextResponse.json({ error: 'Access denied. Master role required.' }, { status: 403 });
     }
 
@@ -182,22 +206,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Admin ID is required' }, { status: 400 });
     }
 
-    // Cannot delete self
     if (id === adminId) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     }
 
-    const target = await db.admin.findUnique({ where: { id } });
-    if (!target) {
+    const targetResult = await db.execute({
+      sql: 'SELECT id, role FROM Admin WHERE id = ?',
+      args: [id],
+    });
+    if (targetResult.rows.length === 0) {
       return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
     }
 
-    // Cannot delete master admin
-    if (target.role === 'master') {
+    if (targetResult.rows[0].role === 'master') {
       return NextResponse.json({ error: 'Cannot delete master admin' }, { status: 400 });
     }
 
-    await db.admin.delete({ where: { id } });
+    await db.execute({
+      sql: 'DELETE FROM Admin WHERE id = ?',
+      args: [id],
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
