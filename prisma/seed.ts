@@ -1,8 +1,25 @@
-import { PrismaClient } from '@prisma/client';
-import { createHash } from 'crypto';
+import { PrismaClient } from '@prisma/client'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { createClient } from '@libsql/client'
+import { createHash } from 'crypto'
+
+function createPrismaClient() {
+  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+
+  if (dbUrl.startsWith('libsql://') || dbUrl.startsWith('https://')) {
+    const libsql = createClient({
+      url: dbUrl,
+      authToken: process.env.DATABASE_AUTH_TOKEN || '',
+    })
+    const adapter = new PrismaLibSQL(libsql)
+    return new PrismaClient({ adapter })
+  }
+
+  return new PrismaClient()
+}
 
 async function seed() {
-  const prisma = new PrismaClient();
+  const prisma = createPrismaClient();
   
   try {
     // Check if master admin exists
@@ -27,7 +44,6 @@ async function seed() {
     // Create default shop if not exists
     const shopExists = await prisma.shop.findFirst();
     if (!shopExists) {
-      // Will be created by master admin via UI
       console.log('ℹ️ No shop found. Create one via Shop Settings after login.');
     }
   } catch (error) {
