@@ -1,0 +1,11 @@
+.next
+node_modules
+db/*.db
+db/*.db-journal
+.watchdog.log
+server.log
+prod.log
+dev.log
+keep-alive.sh
+run-server.sh
+start.sh
