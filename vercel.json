@@ -1,7 +1,6 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "npx prisma generate && next build",
+  "buildCommand": "npx prisma generate && npx next build",
   "installCommand": "npm install --legacy-peer-deps",
-  "outputDirectory": ".next",
+  "framework": "nextjs",
   "regions": ["bom1"]
 }
