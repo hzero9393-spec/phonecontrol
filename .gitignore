@@ -3,10 +3,8 @@ node_modules/
 db/*.db
 db/*.db-journal
 *.log
-.keep-alive.sh
-.run-server.sh
-start.sh
 .pm2/
-.env
+keep-alive.sh
+run-server.sh
+start.sh
 public/profiles/*
-vercel.json
