@@ -1,5 +1,9 @@
 node_modules/
 .next/
+.env
+data/
+prisma/data/
+next
 db/*.db
 db/*.db-journal
 *.log

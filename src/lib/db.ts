@@ -1,46 +1,80 @@
-import { createClient, Client } from '@libsql/client';
+import { Client } from 'pg';
 
 // ============================================================
 // Database connection factory
 // ============================================================
 
-const globalForDb = globalThis as unknown as { _phonecrmClient: Client | undefined };
+type DbStatement = string | { sql: string; args?: unknown[] };
+type DbResult = { rows: any[] };
 
-function createLibsqlClient(): Client {
-  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db';
+class PgDbClient {
+  private client: Client | null = null;
+  private connectPromise: Promise<Client> | null = null;
 
-  if (dbUrl.startsWith('libsql://') || dbUrl.startsWith('https://')) {
-    return createClient({
-      url: dbUrl,
-      authToken: process.env.DATABASE_AUTH_TOKEN || '',
-    });
+  private getSslConfig(url: string): false | { rejectUnauthorized: false } {
+    return url.includes('supabase.co') ? { rejectUnauthorized: false } : false;
   }
 
-  // Local SQLite file via libsql
-  return createClient({ url: dbUrl });
+  private async getClient(): Promise<Client> {
+    if (this.client) return this.client;
+
+    if (!this.connectPromise) {
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString) {
+        throw new Error('DATABASE_URL is not configured');
+      }
+
+      this.connectPromise = (async () => {
+        const client = new Client({
+          connectionString,
+          ssl: this.getSslConfig(connectionString),
+        });
+        await client.connect();
+        this.client = client;
+        return client;
+      })();
+    }
+
+    return this.connectPromise;
+  }
+
+  private toPgSql(sql: string) {
+    let index = 0;
+    return sql.replace(/\?/g, () => `$${++index}`);
+  }
+
+  async execute(statement: DbStatement): Promise<DbResult> {
+    const client = await this.getClient();
+    const sql = typeof statement === 'string' ? statement : statement.sql;
+    const args = typeof statement === 'string' ? [] : statement.args || [];
+    const result = await client.query(this.toPgSql(sql), args);
+    return { rows: result.rows };
+  }
 }
 
-function getClient(): Client {
+const globalForDb = globalThis as unknown as { _phonecrmClient: PgDbClient | undefined };
+
+function getClient(): PgDbClient {
   if (process.env.NODE_ENV !== 'production') {
     if (!globalForDb._phonecrmClient) {
-      globalForDb._phonecrmClient = createLibsqlClient();
+      globalForDb._phonecrmClient = new PgDbClient();
     }
     return globalForDb._phonecrmClient;
   }
-  return createLibsqlClient();
+  return new PgDbClient();
 }
 
-/** Get the raw libsql Client for executing SQL queries */
-export function getDb(): Client {
+/** Get the PostgreSQL query client used by API routes */
+export function getDb(): PgDbClient {
   return getClient();
 }
 
-/** Convert SQLite boolean (0/1) to JS boolean */
+/** Convert database boolean-ish values to JS boolean */
 export function toBool(val: unknown): boolean {
   return val === 1 || val === true || val === '1';
 }
 
-/** Convert JS boolean to SQLite boolean (0/1) */
+/** Convert JS boolean to numeric boolean for legacy payloads */
 export function fromBool(val: unknown): number {
   return val ? 1 : 0;
 }

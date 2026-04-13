@@ -1,25 +1,8 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client'
 import { createHash } from 'crypto'
 
-function createPrismaClient() {
-  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-
-  if (dbUrl.startsWith('libsql://') || dbUrl.startsWith('https://')) {
-    const libsql = createClient({
-      url: dbUrl,
-      authToken: process.env.DATABASE_AUTH_TOKEN || '',
-    })
-    const adapter = new PrismaLibSql(libsql)
-    return new PrismaClient({ adapter })
-  }
-
-  return new PrismaClient()
-}
-
 async function seed() {
-  const prisma = createPrismaClient();
+  const prisma = new PrismaClient();
   
   try {
     // Check if master admin exists
