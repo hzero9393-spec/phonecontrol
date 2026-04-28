@@ -1,0 +1,22 @@
+build.yml
+name: Build APK
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code download
+        uses: actions/checkout@v3
+
+      - name: Java install
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: APK build
+        run: ./gradlew assembleDebug
